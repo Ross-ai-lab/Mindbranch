@@ -3,7 +3,6 @@
    ========================================================================== */
 
 const KEY = 'mindbranch-v1';
-const LEGACY_KEY = 'diff-tree-v1';
 const $ = s => document.querySelector(s);
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -20,7 +19,7 @@ let lastPruned = new Set();  // which modules had already been abandoned
 function save() { try { localStorage.setItem(KEY, JSON.stringify({ A, cursor, view })); } catch (e) {} }
 function load() {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY) || 'null');
+    const s = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (s && s.A) { A = s.A; cursor = s.cursor || 0; return true; }
   } catch (e) {}
   return false;
@@ -127,7 +126,7 @@ function renderLanding() {
       </ul>
     </details>
   `;
-  const hasSaved = !!localStorage.getItem(KEY) || !!localStorage.getItem(LEGACY_KEY);
+  const hasSaved = !!localStorage.getItem(KEY);
   d.querySelector('#resume').disabled = !hasSaved;
   d.querySelector('#go').onclick = () => { A = {}; cursor = 0; view = 'quiz'; save(); render(); };
   d.querySelector('#resume').onclick = () => { if (load()) { view = 'quiz'; render(); } };
@@ -407,7 +406,7 @@ function renderResults() {
 
   const acts = el('div', 'resactions');
   const again = el('button', 'btn ghost', 'Start over');
-  again.onclick = () => { if (confirm('Clear every answer and start again?')) { A = {}; cursor = 0; view = 'landing'; lastRun = null; localStorage.removeItem(KEY); localStorage.removeItem(LEGACY_KEY); render(); } };
+  again.onclick = () => { if (confirm('Clear every answer and start again?')) { A = {}; cursor = 0; view = 'landing'; lastRun = null; localStorage.removeItem(KEY); render(); } };
   const back = el('button', 'btn ghost', 'Back to the questions');
   back.onclick = () => { view = 'quiz'; cursor = Math.max(0, buildQueue(A).length - 1); save(); render(); };
   const exp = el('button', 'btn ghost', 'Export answers');

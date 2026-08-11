@@ -271,13 +271,6 @@ header.top .spacer { flex: 1 1 auto; }
    filter declaration only — two rules writing `filter` on the same element
    silently overwrite each other rather than combining. */
 .artband img, .chapband img, .hero img { filter: saturate(.88) contrast(1.02); }
-/* A soft wash into the card so the join never reads as a hard seam. */
-.artband::after, .chapband::after {
-  content: ""; position: absolute; inset: auto 0 0 0; height: 38%;
-  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.55));
-  pointer-events: none;
-}
-
 /* Chapter header. The box hugs the photograph (`max-content`) rather than
    spanning the panel: with an uncropped image letterboxed inside a full-width
    frame, the leftover grey reads as an empty box rather than as a mat. */
