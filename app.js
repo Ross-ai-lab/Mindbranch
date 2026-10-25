@@ -102,7 +102,7 @@ function renderLanding() {
       <li><b>Framing.</b> Six questions covering substance, medical, medication and stressor causes, plus the boundary with normality. These are steps 1 to 3 and 5 of the standard six-step framework, and they run <i>before</i> anything else because a positive answer invalidates everything downstream.</li>
       <li><b>Screening.</b> Twenty-five gates. Each yes or "not sure" opens the relevant criteria modules; everything else stays shut, so a typical run is thirty to fifty questions rather than three hundred.</li>
       <li><b>Modules.</b> The opened disorders, evaluated criterion by criterion &mdash; symptom counts, duration floors, distress and impairment.</li>
-      <li><b>Differential.</b> Nineteen precedence rules fire in order and demote whatever loses, each printing the reason it lost.</li>
+      <li><b>Differential.</b> ${RULES.length} precedence rules fire in order and demote whatever loses, each printing the reason it lost.</li>
       <li><b>Replay.</b> On the result page, click any answer to change it and watch which diagnoses move and which rules switch on or off. That is the part worth playing with.</li>
     </ol>
 
@@ -114,14 +114,11 @@ function renderLanding() {
     </div>
 
     <details class="credits">
-      <summary>Photography &mdash; ${Object.keys(PHOTOS).length} images, one per question, all freely licensed</summary>
-      <p>Every question carries its own photograph from Wikimedia Commons and none is used twice.
-         All are public domain, CC0, CC BY or CC BY-SA; the attribution below is a condition of
-         those licences, not a courtesy.</p>
+      <summary>Photography &mdash; ${Object.keys(PHOTOS).length} question images</summary>
+      <p>Landscape, texture, architecture and still life from Wikimedia Commons.</p>
       <ul>
         ${Object.entries(PHOTOS).map(([k, p]) => `<li>
-          <a href="${p.p}" target="_blank" rel="noopener">${esc(p.t)}</a>,
-          ${esc(p.a)} <span>(${esc(p.l)})</span>
+          <a href="${p.p}" target="_blank" rel="noopener">${esc(p.t)}</a>
         </li>`).join('')}
       </ul>
     </details>

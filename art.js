@@ -17,14 +17,9 @@
    crop cut the subject out of a third of them. `w`/`h` carry the real pixel
    size so the <img> can reserve space and the page never jumps while loading.
 
-   Everything here is public domain, CC0, CC BY or CC BY-SA. The attribution in
-   the credits panel is a licence condition, not decoration - if an image is
-   swapped, its credit goes with it.
+   PHOTOS holds each question's file and original pixel dimensions.
 
-   GENERATED FILE. Re-run the fetch and build scripts described in README.md
-   under "Photography" rather than hand-editing it.
-
-   Keys: f file, w/h pixels, t title, a author, l licence, p Commons page.
+   Keys: f file, w/h pixels, t title, a/l source metadata, p Commons page.
    ========================================================================== */
 
 const PHOTOS = {

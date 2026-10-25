@@ -2,8 +2,7 @@
    Mindbranch — clinical data
    ----------------------------------------------------------------------------
    Every item is written in first-person self-report language, in our own words.
-   DSM-5-TR criteria text is APA copyright and is deliberately NOT reproduced;
-   these are paraphrased screening items built to the same thresholds.
+   These are paraphrased screening items built to the manual's thresholds.
 
    Structure:
      CONTEXT  — First's steps 1-3 (substance / medical / medication / stressor)

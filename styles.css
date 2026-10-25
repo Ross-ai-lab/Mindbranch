@@ -234,7 +234,7 @@ header.top .spacer { flex: 1 1 auto; }
 }
 @media (max-width: 880px) { .qlayout { grid-template-columns: 1fr; gap: 22px; } .spine { display: none; } }
 
-.spine { position: sticky; top: 24px; }
+.spine { position: static; }
 .spine .lab { font: 700 11px/1 var(--sans); letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
 .spine ul { list-style: none; margin: 0; padding: 0; position: relative; }
 .spine ul::before { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 1px; background: var(--line2); }
