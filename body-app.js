@@ -119,7 +119,7 @@
     const sections=[...new Set(queue.map(s=>s.section))];
     const list=h('ol');for(const name of sections){const indices=queue.map((s,i)=>s.section===name?i:-1).filter(i=>i>=0);const li=h('li',name===step.section?'now':Math.max(...indices)<state.cursor?'done':'',esc(name));list.append(li);}side.append(list);
     const card=h('section','bb-qcard');
-    card.innerHTML=`<div class="bb-q-top"><span class="bb-branch-mark" aria-hidden="true">${branchGlyph(step.group)}</span><span class="chip">${esc(step.section)}</span><span class="bb-counter">${state.cursor+1} / ${queue.length}</span></div><h2>${esc(q.q)}</h2>${q.help?`<p class="bb-qhelp">${esc(q.help)}</p>`:''}${q.kind==='multi'?'<p class="bb-small">Choose every answer that applies, or “None of these”.</p>':''}`;
+    card.innerHTML=`<div class="bb-q-top"><span class="bb-branch-mark" aria-hidden="true">${branchGlyph(step.group)}</span><span class="chip">${esc(step.section)}</span><span class="bb-counter">${state.cursor+1} / ${queue.length}</span></div><h2>${esc(q.q)}</h2>${q.help?`<p class="bb-qhelp${q.id==='urgent_now'?' bb-emergency-notice':''}">${q.id==='urgent_now'?`<strong>${esc(q.help)}</strong>`:esc(q.help)}</p>`:''}${q.kind==='multi'?'<p class="bb-small">Choose every answer that applies, or “None of these”.</p>':''}`;
     const note=h('p','bb-path-note',pruneNote);note.setAttribute('role','status');pruneNote='';
     let next;
     card.append(input(q,()=>{

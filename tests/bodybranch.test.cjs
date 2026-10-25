@@ -47,6 +47,13 @@ test('branches shrink after a parent no and reopen on yes or uncertainty',()=>{
   a.sleep_attacks='no';assert.ok(!E.queue(a).some(s=>s.item.id==='cataplexy'));
   a.sleep_attacks='unsure';assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
 });
+test('uncertain anatomy preserves candidates and accepts the retired saved value',()=>{
+  assert.equal(E.sanitize({anatomy:'unknown'}).anatomy,'unsure');
+  for(const value of ['unsure','unknown']){
+    const r=E.evaluate(fixture(['reproductive'],{anatomy:value,pelvic_cycle:'yes',heavy_period:'yes'}));
+    assert.ok(r.candidates.some(c=>c.id==='endometriosis'));
+  }
+});
 test('stale answers from closed branches cannot influence ranking',()=>{
   const a=fixture(['skin'],{tests:[],lab_thyroid:'hyper',lab_trab:'positive',heat:'yes',weight_loss:'yes',rash_shape:'hives'});
   const r=E.evaluate(a);assert.ok(!r.all.some(c=>c.id==='graves'));assert.ok(r.inactiveAnswers.includes('lab_thyroid'));

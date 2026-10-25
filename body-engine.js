@@ -47,7 +47,8 @@
     const clean = {};
     if (!input || typeof input !== 'object' || Array.isArray(input)) return clean;
     for (const q of allItems) {
-      const v = input[q.id];
+      const raw = input[q.id];
+      const v = q.id === 'anatomy' && raw === 'unknown' ? UNKNOWN : raw;
       const allowed = q.kind === 'yn' ? ['yes','no',UNKNOWN] : [...(q.opts || []).map(o => o.v),UNKNOWN];
       if (q.kind === 'multi' && Array.isArray(v)) {
         const arr = [...new Set(v.filter(x => typeof x === 'string' && allowed.includes(x)))];
@@ -104,7 +105,7 @@
     const rows = [];
     if (!emergencies.length && scope === 'adult') for (const c of D.conditions) {
       if (!c.domains.some(d => selected.includes(d))) continue;
-      if (c.anatomy && a.anatomy && !c.anatomy.includes(a.anatomy)) continue;
+      if (c.anatomy && a.anatomy && a.anatomy !== UNKNOWN && !c.anatomy.includes(a.anatomy)) continue;
       const support = c.support.map(r => evidence(r,a));
       const against = c.against.map(r => evidence(r,a));
       const matched = support.filter(r => r.state === 'match');

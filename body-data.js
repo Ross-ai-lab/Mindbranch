@@ -85,9 +85,9 @@
       opt('pregnancy', 'Possible pregnancy with severe pelvic pain, faintness or heavy bleeding'),
       opt('metabolic', 'Extreme thirst/urination with vomiting, deep rapid breathing or unusual drowsiness'),
       opt('spine', 'New bladder/bowel control problems with numbness around the groin or new leg weakness')
-    ], 'Choose only symptoms happening now. A positive answer stops the routine questionnaire.'),
+    ], 'A positive answer stops the routine questionnaire.'),
     pick('age', 'Which adult age group are you in?', [opt('18_39', '18–39'), opt('40_64', '40–64'), opt('65_plus', '65 or older'), opt('under18', 'Under 18')]),
-    pick('anatomy', 'Which reproductive anatomy is relevant to the questions?', [opt('uterus', 'Uterus / ovaries'), opt('prostate', 'Prostate / testes'), opt('other', 'Neither of these'), opt('unknown', 'Prefer not to say / not sure')], 'Used only to route anatomy-specific questions.'),
+    pick('anatomy', 'Which reproductive anatomy is relevant to the questions?', [opt('uterus', 'Uterus / ovaries'), opt('prostate', 'Prostate / testes'), opt('other', 'Neither of these')], 'Used only to route anatomy-specific questions.'),
     pick('duration', 'How long has the main problem been present?', [opt('hours', 'Less than 48 hours'), opt('days', '2 days to 2 weeks'), opt('weeks', '2–6 weeks'), opt('months', 'More than 6 weeks but less than 6 months'), opt('chronic', '6 months or longer')]),
     pick('course', 'How is it changing?', [opt('worse', 'Getting progressively worse'), opt('episodes', 'Separate episodes with better periods'), opt('stable', 'Fairly steady'), opt('better', 'Improving')]),
     multi('concerns', 'Which physical symptoms do you want to narrow down?', domains, 'Answer for this episode or ongoing problem, rather than every symptom you have ever had. Select every relevant area.'),

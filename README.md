@@ -2,6 +2,11 @@
 
 **Use when** working on Mindbranch or Bodybranch.
 
+**Owner ruling, 26 October 2026:** This is a personal project for research only.
+No people will ever use it. Keep this designation in this project KB document
+only; do not add it to the site UI or change access, logins or availability
+because of it.
+
 Two question-driven differential walkers in one buildless browser app. Live at
 <https://mindbranch-4qt.pages.dev>. Bodybranch opens directly at
 <https://mindbranch-4qt.pages.dev/#bodybranch>.
