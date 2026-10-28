@@ -32,7 +32,8 @@
     if (rule.all) return rule.all.every(r => matches(r,a));
     if (rule.any) return rule.any.some(r => matches(r,a));
     const value = a[rule.q];
-    return Array.isArray(value) ? value.includes(rule.value) : value === rule.value;
+    const hit = Array.isArray(value) ? value.includes(rule.value) : value === rule.value;
+    return rule.not ? !hit : hit;
   }
   // An uncertain parent preserves its follow-up. An explicit incompatible
   // parent closes it; answers retained from an older path are then inert.
@@ -71,9 +72,12 @@
     const out = D.context.map(item => ({item,group:'context',section:'The starting picture'}));
     // Return no speculative downstream path until areas have been selected.
     if (!Array.isArray(a.concerns)) return out;
+    // Gates read only answers already on the path, so a hidden parent's stale
+    // answer cannot keep a grandchild open. Parents precede their children.
+    const reach = Object.fromEntries(D.context.map(q => [q.id,a[q.id]]));
     for (const g of D.groups) {
-      if (!groupOpen(g,a)) continue;
-      for (const item of g.items) if (eligible(item.when,a)) out.push({ item,group:g.id,section:g.name });
+      if (!groupOpen(g,reach)) continue;
+      for (const item of g.items) if (eligible(item.when,reach)) { out.push({ item,group:g.id,section:g.name }); reach[item.id] = a[item.id]; }
     }
     return out;
   }
@@ -105,7 +109,7 @@
     const rows = [];
     if (!emergencies.length && scope === 'adult') for (const c of D.conditions) {
       if (!c.domains.some(d => selected.includes(d))) continue;
-      if (c.anatomy && a.anatomy && a.anatomy !== UNKNOWN && !c.anatomy.includes(a.anatomy)) continue;
+      if (c.anatomy && a.anatomy && a.anatomy !== UNKNOWN && c.anatomy !== a.anatomy) continue;
       const support = c.support.map(r => evidence(r,a));
       const against = c.against.map(r => evidence(r,a));
       const matched = support.filter(r => r.state === 'match');

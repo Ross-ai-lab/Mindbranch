@@ -42,7 +42,7 @@ test('child anatomy, age and current symptom gates protect the adult path',()=>{
   const privateAnatomy=E.queue(fixture(['reproductive'],{anatomy:'unknown'}));assert.ok(privateAnatomy.some(s=>s.item.id==='preg_possible'));
 });
 test('branches shrink after a parent no and reopen on yes or uncertainty',()=>{
-  const a=fixture(['sleep'],{sleep_attacks:'yes'});
+  const a=fixture(['sleep'],{sleepy:'yes',sleep_attacks:'yes'});
   assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
   a.sleep_attacks='no';assert.ok(!E.queue(a).some(s=>s.item.id==='cataplexy'));
   a.sleep_attacks='unsure';assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
@@ -84,7 +84,7 @@ test('anemia and hyperthyroidism weaken a primary orthostatic-tachycardia label'
   assert.ok(!E.evaluate(a).candidates.some(c=>c.id==='pots'));assert.equal(row(a,'pots').conflicts.length,2);
 });
 test('bleeding and nocturnal diarrhea reduce an IBS match and remain urgent clues',()=>{
-  const a=fixture(['digestion','bowel'],{pain_bowel:'yes',stool_pattern:'mixed',bowel_chronic:'yes',stool_blood:'yes',bowel_night:'yes'});
+  const a=fixture(['digestion','bowel'],{pain_bowel:'yes',stool_pattern:'mixed',bowel_chronic:'yes',warning_signs:['stoolblood'],bowel_night:'yes'});
   const r=E.evaluate(a);assert.ok(r.warnings.some(w=>w.id==='stoolblood'));assert.equal(row(a,'ibs').band,'less_supported');assert.ok(r.candidates.some(c=>c.id==='ibd'));
 });
 test('fever with flank symptoms keeps the same-day pathway regardless of candidate order',()=>{
@@ -123,11 +123,11 @@ test('candidate examples reach the expected leading pattern',()=>{
 });
 test('all candidates can be elicited and no source reference is orphaned',()=>{
   for(const c of D.conditions){
-    const a=fixture(c.domains,{anatomy:c.anatomy?.[0]||'unknown',duration:'chronic',tests:['thyroid','cbc','iron','b12','glucose','celiac','cortisol']});
-    for(const r of c.support){const q=E.byId[r.q];if(q.kind==='multi')a[r.q]=[...(Array.isArray(a[r.q])?a[r.q]:[]),r.value];else a[r.q]=r.value;}
+    const a=fixture(c.domains,{anatomy:c.anatomy||'unknown',duration:'chronic',tests:['thyroid','cbc','iron','b12','glucose','celiac','cortisol']});
+    for(const r of c.support){const q=E.byId[r.q];if(r.not)continue;if(q.kind==='multi')a[r.q]=[...(Array.isArray(a[r.q])?a[r.q]:[]),r.value];else a[r.q]=r.value;}
     // Ensure dependent questions are reachable without overriding the target's
     // own evidence value (such as a no on an absent symptom).
-    const enable=rule=>{if(!rule)return;if(rule.all)rule.all.forEach(enable);else if(rule.any)enable(rule.any[0]);else if(a[rule.q]===undefined||a[rule.q]==='no')a[rule.q]=rule.value;};
+    const enable=rule=>{if(!rule)return;if(rule.all)rule.all.forEach(enable);else if(rule.any)enable(rule.any[0]);else if(!rule.not&&(a[rule.q]===undefined||a[rule.q]==='no'))a[rule.q]=rule.value;};
     for(const r of c.support)enable(E.byId[r.q].when);
     const result=row(a,c.id);assert.ok(result,c.id);assert.ok(['possible','stronger'].includes(result.band),`${c.id}: ${result.band} ${result.score}`);
   }
