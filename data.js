@@ -23,7 +23,7 @@ const core = a => yes(a, 's_dep') + yes(a, 's_anh');
 const YN = [
   { v: 'yes', t: 'Yes' },
   { v: 'no', t: 'No' },
-  { v: 'unsure', t: "I'm not sure" }
+  { v: 'unsure', t: 'Not sure' }
 ];
 
 /* ================================================================ CONTEXT */

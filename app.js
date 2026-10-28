@@ -13,6 +13,7 @@ let A = {};            // answers
 let cursor = 0;        // index into the live queue
 let view = 'landing';  // landing | quiz | results
 let pendingDiff = null;
+let pathOpen = false;         // the answer-path panel stays open while editing
 let lastQLen = null;         // to notice the queue SHRINKING after an answer
 let lastPruned = new Set();  // which modules had already been abandoned
 
@@ -141,7 +142,7 @@ function renderLanding() {
   let saved = false;
   try { saved = !!localStorage.getItem(KEY); } catch (e) {}
   d.innerHTML = `
-    ${photoBand('hero', null, { eager: true, cls: 'hero' })}
+    ${photoBand('hero', { eager: true, cls: 'hero' })}
     <h2>A diagnosis is a chain of exclusions, not a score.</h2>
     <p class="lede">Framing questions first, then ${SCREEN.length} screening gates. Each yes or "not sure" opens its DSM-5-TR criteria modules, and ${RULES.length} precedence rules decide which diagnoses survive, each printing why. Questions that can no longer change the outcome are skipped. On the result, change any answer to see what moves.</p>
     <div class="actions">
@@ -205,10 +206,7 @@ function renderQuiz() {
   lay.appendChild(spine);
 
   const card = el('section', 'qcard');
-  /* Framing and screening have their own banner; a module question takes its
-     own photograph, falling back to the chapter's. */
-  const chap = step.phase === 'context' ? 'Framing' : step.phase === 'screen' ? 'Screening' : MOD[step.mod].chap;
-  card.insertAdjacentHTML('afterbegin', photoBand(it.id, chap, { eager: true }));
+  card.insertAdjacentHTML('afterbegin', photoBand(it.id, { eager: true }));
   const meta = el('div', 'qmeta');
   meta.appendChild(el('span', 'chip', esc(step.sect)));
   meta.appendChild(el('span', 'count', `${cursor + 1} / ${queue.length}`));
@@ -278,7 +276,7 @@ function renderResults() {
   d.appendChild(el('h2', null, 'Result'));
   d.appendChild(el('p', 'resub',
     `${plural(run.opened.length, 'module')} opened &middot; ${run.met.length} met &middot; ${run.near.length} near threshold &middot; ` +
-    `${run.ruled.length} ruled out &middot; ${run.pruned.length} settled early (${plural(run.skippedCount, 'question')} not needed) &middot; ` +
+    `${run.ruled.length} ruled out &middot; ` + (run.pruned.length ? `${run.pruned.length} settled early (${plural(run.skippedCount, 'question')} not needed) &middot; ` : '') +
     `${plural(run.ledger.length, 'rule')} fired`));
 
   if (pendingDiff) { d.appendChild(renderDiff(pendingDiff)); pendingDiff = null; }
@@ -320,9 +318,11 @@ function renderResults() {
   });
   d.appendChild(p3);
 
-  /* Answers on the current path. Change one to re-run the tree. */
-  const p4 = el('section', 'panelbox path');
-  p4.appendChild(el('h3', null, 'Answer path'));
+  /* Answers on the current path, collapsed like Bodybranch's. Change one to re-run the tree. */
+  const p4 = el('details', 'panelbox path');
+  p4.open = pathOpen;
+  p4.ontoggle = () => { pathOpen = p4.open; };
+  p4.appendChild(el('summary', null, 'Review or change the answer path'));
   p4.appendChild(el('p', 'note', 'Change any answer and the whole tree is re-evaluated, with the differences shown at the top.'));
   buildQueue(A).filter(s => answered(s.item, A)).forEach(s => {
     const row = el('div', 'row');
@@ -401,7 +401,7 @@ MODULES.forEach(m => { if (!CHAP_LEAD[m.chap] && m.items.length) CHAP_LEAD[m.cha
 function appendGrouped(panel, list) {
   const chapters = [...new Set(list.map(r => r.chap))];
   chapters.forEach(chap => {
-    const h = el('div', 'chaphead', photoBand(CHAP_LEAD[chap], chap, { cls: 'chapband' }));
+    const h = el('div', 'chaphead', photoBand(CHAP_LEAD[chap], { cls: 'chapband' }));
     h.appendChild(el('span', 'chaplabel', esc(chap)));
     panel.appendChild(h);
     list.filter(r => r.chap === chap).forEach(r => panel.appendChild(dxCard(r)));

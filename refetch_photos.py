@@ -1,4 +1,4 @@
-"""Verify or rebuild Mindbranch's 152 photographs from art.js itself.
+"""Verify or rebuild Mindbranch's question photographs from art.js itself.
 
 art.js has always called itself a generated file, but the scripts it named did
 not exist anywhere in the workspace, so the set could not be checked and could
@@ -6,7 +6,7 @@ not be recovered if a file were lost. This is that script.
 
 It is DETERMINISTIC: art.js already records the exact Commons File: page for
 every slot, so nothing here searches, ranks, or can pick a different picture.
-The curation those 152 images went through (four rounds, a contact sheet, the
+The curation the images went through (four rounds, a contact sheet, the
 never-people rule) is preserved in art.js and this script only re-executes it.
 
     py refetch_photos.py                 verify - no downloads, nothing written
@@ -35,7 +35,7 @@ import urllib.parse
 
 PROJ = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJ.parents[2] / "Pipelines" / "_lib"))
-from commons import CommonsClient, ext_value, looks_like_image, strip_tags  # noqa: E402
+from commons import CommonsClient, ext_value, looks_like_image  # noqa: E402
 
 ART = PROJ / "art.js"
 PHOTOS_DIR = PROJ / "photos"
@@ -60,13 +60,6 @@ def sniff(blob):
     if blob[:4] == b"RIFF" and blob[8:12] == b"WEBP":
         return ".webp"
     return None
-
-
-def tidy_artist(raw):
-    """extmetadata Artist is HTML with links; reduce it to a plain name."""
-    name = re.sub(r"\s+", " ", strip_tags(raw or "")).strip()
-    name = re.sub(r"^(User:|talk\b)", "", name, flags=re.I).strip()
-    return name[:80] or "Unknown"
 
 
 def read_entries():
@@ -178,25 +171,21 @@ def refetch(entries, apply_meta):
             "f": e["f"], "w": w, "h": h,
             "t": (ext_value(meta, "ObjectName")
                   or e["title"][5:].rsplit(".", 1)[0]),
-            "a": tidy_artist(ext_value(meta, "Artist")),
-            "l": ext_value(meta, "LicenseShortName") or "",
             "p": e["page"],
         }
         state_path.write_text(json.dumps(done, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"  [{n}/{len(entries)}] {e['key']}: {w}x{h}  "
-              f"{final.stat().st_size // 1024} KB  {done[e['key']]['a']} "
-              f"[{done[e['key']]['l']}]")
+        print(f"  [{n}/{len(entries)}] {e['key']}: {w}x{h}  {final.stat().st_size // 1024} KB")
 
     print(f"\n{len(done)} of {len(entries)} slots installed -> {state_path}")
     if apply_meta:
         rewrite_art(done)
     else:
         print("art.js was NOT touched. Re-run with --apply to write the new "
-              "sizes and credits into it.")
+              "sizes and titles into it.")
 
 
 def rewrite_art(done):
-    """Put the fetched w/h/t/a/l back into art.js, one line at a time.
+    """Put the fetched w/h/t back into art.js, one line at a time.
 
     Line-level, never a wholesale regeneration: a slot that was skipped or that
     failed this pass must keep exactly the metadata it already had.
@@ -211,8 +200,7 @@ def rewrite_art(done):
         indent = line[:len(line) - len(line.lstrip())]
         tail = "," if line.rstrip().endswith(",") else ""
         new = (f"{indent}'{m['key']}': {{ f: '{rec['f']}', w: {rec['w']}, h: {rec['h']}, "
-               f"t: {js_str(rec['t'])}, a: {js_str(rec['a'])}, l: {js_str(rec['l'])}, "
-               f"p: '{rec['p']}' }}{tail}\n")
+               f"t: {js_str(rec['t'])}, p: '{rec['p']}' }}{tail}\n")
         changed += new != line
         out.append(new)
     ART.write_text("".join(out), encoding="utf-8")
@@ -228,7 +216,7 @@ def main():
     ap.add_argument("--refetch", action="store_true",
                     help="redownload and reinstall the images (default: verify only)")
     ap.add_argument("--apply", action="store_true",
-                    help="with --refetch, write the new sizes and credits into art.js")
+                    help="with --refetch, write the new sizes and titles into art.js")
     ap.add_argument("--only", nargs="+", metavar="KEY",
                     help="limit to these art.js keys")
     args = ap.parse_args()
