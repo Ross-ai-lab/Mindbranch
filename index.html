@@ -116,11 +116,17 @@
 <div class="motes" id="motes" aria-hidden="true"></div>
 <div class="leaves" id="leaves" aria-hidden="true"></div>
 
+<!-- Local background audio, shared by both workspaces. -->
+<audio id="site-music" preload="none" loop>
+  <source src="audio/mindbranch-music.mp4" type="audio/mp4">
+</audio>
+
 <div class="wrap">
   <header class="top">
     <h1>Mind<span>branch</span></h1>
     <div class="sub">DSM-5-TR criteria logic, walked one question at a time</div>
     <div class="spacer"></div>
+    <button class="btn ghost sm music-toggle" id="music-toggle" type="button" aria-pressed="false" title="Play or pause background music">♫ Music: off</button>
     <button class="btn ghost sm" id="restart">Start screen</button>
   </header>
   <nav class="branch-tabs" role="tablist" aria-label="Diagnostic branches">

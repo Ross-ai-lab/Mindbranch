@@ -187,6 +187,13 @@ header.top h1 { font: 600 25px/1.2 var(--serif); margin: 0; letter-spacing: .2px
 header.top h1 span { color: var(--cool); }
 header.top .sub { color: var(--dim); font-size: 13.5px; }
 header.top .spacer { flex: 1 1 auto; }
+.music-toggle { min-width: 96px; }
+.music-toggle.on { background: var(--cool2); color: var(--cool); border-color: var(--cool); }
+.site-foot {
+  color: var(--dim); font-size: 12px; text-align: center;
+  margin-top: 38px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+.site-foot a { color: var(--cool); }
 
 .btn {
   font: 500 14px/1 var(--sans); color: var(--ink2);

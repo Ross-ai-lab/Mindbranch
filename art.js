@@ -17,7 +17,12 @@
    crop cut the subject out of a third of them. `w`/`h` carry the real pixel
    size so the <img> can reserve space and the page never jumps while loading.
 
-   PHOTOS holds each question's file and original pixel dimensions.
+   GENERATED FILE. `refetch_photos.py` in this folder owns it - it verifies the
+   whole set against Commons by default, and rebuilds it with
+   `--refetch --apply`. Every slot below records its exact Commons File: page,
+   which is what makes that rebuild deterministic. Run the verify pass after
+   editing this file by hand; it catches a size that no longer matches its
+   image, which is otherwise invisible until the page jumps while loading.
 
    Keys: f file, w/h pixels, t title, a/l source metadata, p Commons page.
    ========================================================================== */

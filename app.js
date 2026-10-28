@@ -3,6 +3,7 @@
    ========================================================================== */
 
 const KEY = 'mindbranch-v1';
+const MUSIC_KEY = 'mindbranch-music-enabled-v1';
 const $ = s => document.querySelector(s);
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -14,6 +15,94 @@ let lastRun = null;    // for the flip-an-answer diff
 let pendingDiff = null;
 let lastQLen = null;         // to notice the queue SHRINKING after an answer
 let lastPruned = new Set();  // which modules had already been abandoned
+
+/* ------------------------------------------------------------- site audio */
+let sfxCtx = null;
+
+function playButtonSound(button) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  try {
+    if (!sfxCtx) sfxCtx = new AudioContextClass();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume().catch(() => {});
+
+    const primary = button.classList.contains('primary');
+    const now = sfxCtx.currentTime;
+    const osc = sfxCtx.createOscillator();
+    const filter = sfxCtx.createBiquadFilter();
+    const gain = sfxCtx.createGain();
+    const base = primary ? 660 : 500;
+
+    osc.type = primary ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(base, now);
+    osc.frequency.exponentialRampToValueAtTime(base * (primary ? 1.16 : 1.08), now + 0.045);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(primary ? 3000 : 2200, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(primary ? 0.055 : 0.035, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+
+    osc.connect(filter).connect(gain).connect(sfxCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {}
+}
+
+function setupClickSounds() {
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target ? target.closest('button') : null;
+    if (!button || button.disabled) return;
+    playButtonSound(button);
+  }, true);
+}
+
+function setupSiteMusic() {
+  const audio = $('#site-music');
+  const toggle = $('#music-toggle');
+  if (!audio || !toggle) return;
+  audio.volume = 0.18;
+
+  const readCookiePreference = () => {
+    try {
+      const key = encodeURIComponent(MUSIC_KEY) + '=';
+      const row = document.cookie.split('; ').find(item => item.startsWith(key));
+      return row ? decodeURIComponent(row.slice(key.length)) === 'on' : null;
+    } catch (e) { return null; }
+  };
+  const readPreference = () => {
+    const cookieValue = readCookiePreference();
+    if (cookieValue !== null) return cookieValue;
+    try { return localStorage.getItem(MUSIC_KEY) === 'on'; } catch (e) { return false; }
+  };
+  const writePreference = value => {
+    try { localStorage.setItem(MUSIC_KEY, value ? 'on' : 'off'); } catch (e) {}
+    try {
+      document.cookie = `${encodeURIComponent(MUSIC_KEY)}=${value ? 'on' : 'off'}; max-age=31536000; path=/; samesite=lax`;
+    } catch (e) {}
+  };
+  const paint = playing => {
+    toggle.textContent = playing ? '♫ Music: on' : '♫ Music: off';
+    toggle.setAttribute('aria-pressed', String(playing));
+    toggle.classList.toggle('on', playing);
+  };
+  const start = () => audio.play().then(() => { writePreference(true); paint(true); }).catch(() => paint(false));
+  const stop = () => { audio.pause(); writePreference(false); paint(false); };
+
+  const wantsMusic = readPreference();
+  paint(wantsMusic);
+  toggle.addEventListener('click', () => { if (audio.paused) start(); else stop(); });
+
+  if (wantsMusic) {
+    const firstGesture = () => {
+      start();
+      document.removeEventListener('pointerdown', firstGesture, true);
+      document.removeEventListener('keydown', firstGesture, true);
+    };
+    document.addEventListener('pointerdown', firstGesture, true);
+    document.addEventListener('keydown', firstGesture, true);
+  }
+}
 
 /* ------------------------------------------------------------- persistence */
 function save() { try { localStorage.setItem(KEY, JSON.stringify({ A, cursor, view })); } catch (e) {} }
@@ -552,5 +641,7 @@ function dxCard(r) {
 /* ==================================================================== boot */
 document.addEventListener('DOMContentLoaded', () => {
   $('#restart').onclick = () => { view = 'landing'; render(); };
+  setupClickSounds();
+  setupSiteMusic();
   render();
 });
