@@ -480,5 +480,5 @@
     { id:'bowel_alarm',rule:any(eq('warning_signs','stoolblood'),eq('bowel_night','yes')),title:'Bowel alarm features change the priority',message:'Blood mixed into stool or nocturnal diarrhea needs assessment for organic disease. An IBS or food-trigger match cannot close that branch.' },
     { id:'mecfs_timing',rule:all(eq('pem','yes'),any(eq('duration','hours'),eq('duration','days'),eq('duration','weeks'),eq('duration','months'))),title:'A crash alone does not establish ME/CFS',message:'The prolonged duration and full clinical criteria used by this path have not been established. Investigate other causes and the recovery pattern.' }
   ];
-  return { version:1, reviewed:'2026-10-28', context, groups, domains, conditions, alerts, differentialRules, sources };
+  return { version:1, context, groups, domains, conditions, alerts, differentialRules, sources };
 });
