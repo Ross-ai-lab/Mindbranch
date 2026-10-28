@@ -1,7 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const vm = require('node:vm');
 const D = require('../body-data.js');
 const E = require('../body-engine.js');
 function fixture(areas, answers={}) {
@@ -32,7 +31,7 @@ test('not sure and missing are never treated as negative answers',()=>{
   const unknown=E.evaluate({...a,urgent_now:['unsure']});assert.equal(unknown.safetyUnknown,true);assert.ok(unknown.candidates.every(c=>c.band!=='stronger'));
 });
 test('every emergency branch interrupts the ordinary differential',()=>{
-  for(const id of Object.keys(E.emergencyMap)){
+  for(const id of Object.keys(E.emergencies)){
     const r=E.evaluate(fixture(['energy'],{urgent_now:[id],fatigue_daily:'yes'}));assert.ok(r.emergencies.length,id);assert.equal(r.candidates.length,0,id);
   }
 });
@@ -42,7 +41,7 @@ test('child anatomy, age and current symptom gates protect the adult path',()=>{
   const privateAnatomy=E.queue(fixture(['reproductive'],{anatomy:'unknown'}));assert.ok(privateAnatomy.some(s=>s.item.id==='preg_possible'));
 });
 test('branches shrink after a parent no and reopen on yes or uncertainty',()=>{
-  const a=fixture(['sleep'],{sleep_attacks:'yes'});
+  const a=fixture(['sleep'],{sleepy:'yes',sleep_attacks:'yes'});
   assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
   a.sleep_attacks='no';assert.ok(!E.queue(a).some(s=>s.item.id==='cataplexy'));
   a.sleep_attacks='unsure';assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
@@ -84,7 +83,7 @@ test('anemia and hyperthyroidism weaken a primary orthostatic-tachycardia label'
   assert.ok(!E.evaluate(a).candidates.some(c=>c.id==='pots'));assert.equal(row(a,'pots').conflicts.length,2);
 });
 test('bleeding and nocturnal diarrhea reduce an IBS match and remain urgent clues',()=>{
-  const a=fixture(['digestion','bowel'],{pain_bowel:'yes',stool_pattern:'mixed',bowel_chronic:'yes',stool_blood:'yes',bowel_night:'yes'});
+  const a=fixture(['digestion','bowel'],{pain_bowel:'yes',stool_pattern:'mixed',bowel_chronic:'yes',warning_signs:['stoolblood'],bowel_night:'yes'});
   const r=E.evaluate(a);assert.ok(r.warnings.some(w=>w.id==='stoolblood'));assert.equal(row(a,'ibs').band,'less_supported');assert.ok(r.candidates.some(c=>c.id==='ibd'));
 });
 test('fever with flank symptoms keeps the same-day pathway regardless of candidate order',()=>{
@@ -117,19 +116,19 @@ test('candidate examples reach the expected leading pattern',()=>{
     ['migraine',['headache'],{head_pulse:'yes',head_nausea:'yes',aura:'yes',course:'episodes'}],
     ['endometriosis',['reproductive'],{anatomy:'uterus',pelvic_cycle:'yes',heavy_period:'yes'}],
     ['graves',['weight'],{heat:'yes',weight_loss:'yes',tests:['thyroid'],lab_thyroid:'hyper',lab_trab:'positive'}],
-    ['adrenal',['energy'],{dark_skin:'yes',salt_craving:'yes',weight_loss:'yes',tests:['cortisol'],lab_cortisol:'low',lab_acth:'high'}]
+    ['adrenal',['energy'],{dark_skin:'yes',salt_craving:'yes',warning_signs:['weightloss'],tests:['cortisol'],lab_cortisol:'low',lab_acth:'high'}]
   ];
   for(const [id,areas,answers] of examples){const r=E.evaluate(fixture(areas,answers));assert.equal(r.candidates[0]?.id,id,`${id}: got ${r.candidates.map(c=>c.id).join(', ')}`);}
 });
-test('all candidates can be elicited and no source reference is orphaned',()=>{
-  for(const c of D.conditions){
-    const a=fixture(c.domains,{anatomy:c.anatomy?.[0]||'unknown',duration:'chronic',tests:['thyroid','cbc','iron','b12','glucose','celiac','cortisol']});
-    for(const r of c.support){const q=E.byId[r.q];if(q.kind==='multi')a[r.q]=[...(Array.isArray(a[r.q])?a[r.q]:[]),r.value];else a[r.q]=r.value;}
-    // Ensure dependent questions are reachable without overriding the target's
+test('every candidate is reachable from each symptom area it lists',()=>{
+  for(const c of D.conditions)for(const area of c.domains){
+    const a=fixture([area],{anatomy:c.anatomy||'unknown',tests:['thyroid','cbc','iron','b12','glucose','celiac','cortisol']});
+    for(const r of c.support){if(r.not)continue;const q=E.byId[r.q];if(q.kind==='multi')a[r.q]=[...a[r.q],r.value];else a[r.q]=r.value;}
+    // Open the follow-ups the evidence needs without overriding the target's
     // own evidence value (such as a no on an absent symptom).
-    const enable=rule=>{if(!rule)return;if(rule.all)rule.all.forEach(enable);else if(rule.any)enable(rule.any[0]);else if(a[rule.q]===undefined||a[rule.q]==='no')a[rule.q]=rule.value;};
+    const enable=rule=>{if(!rule)return;if(rule.all)rule.all.forEach(enable);else if(rule.any)enable(rule.any[0]);else if(!rule.not&&(a[rule.q]===undefined||a[rule.q]==='no'))a[rule.q]=rule.value;};
     for(const r of c.support)enable(E.byId[r.q].when);
-    const result=row(a,c.id);assert.ok(result,c.id);assert.ok(['possible','stronger'].includes(result.band),`${c.id}: ${result.band} ${result.score}`);
+    const result=row(a,c.id);assert.ok(result&&['possible','stronger'].includes(result.band),`${c.id} from ${area}: ${result&&result.band}`);
   }
 });
 test('invalid imported values, duplicate options and unknown ids are sanitized',()=>{
@@ -149,11 +148,64 @@ test('replaying an answer produces a meaningful differential change',()=>{
   const a=fixture(['breathing'],{wheeze:'yes',airway_triggers:'yes',night_cough:'yes'});const before=E.evaluate(a);const after=E.evaluate({...a,wheeze:'no',airway_triggers:'no',night_cough:'no'});
   assert.ok(E.diff(before,after).some(c=>c.id==='asthma'&&c.from==='stronger'&&!['stronger','possible'].includes(c.to)));
 });
-test('existing Mindbranch engine retains deterministic evaluation and its saved-run key',()=>{
-  const ctx=vm.createContext({console});vm.runInContext(fs.readFileSync(require.resolve('../data.js'),'utf8'),ctx);vm.runInContext(fs.readFileSync(require.resolve('../engine.js'),'utf8'),ctx);
-  assert.equal(vm.runInContext('JSON.stringify(evaluate({})) === JSON.stringify(evaluate({}))',ctx),true);
-  assert.match(fs.readFileSync(require.resolve('../app.js'),'utf8'),/const KEY = 'mindbranch-v1'/);
-  assert.match(fs.readFileSync(require.resolve('../body-app.js'),'utf8'),/const KEY = 'bodybranch-v1'/);
+test('saved-run and music storage keys are unchanged',()=>{
+  const read=f=>fs.readFileSync(require.resolve('../'+f),'utf8');
+  assert.match(read('app.js'),/'mindbranch-v1'/);assert.match(read('app.js'),/'mindbranch-music-enabled-v1'/);
+  assert.match(read('body-app.js'),/'bodybranch-v1'/);
+});
+// Regression tests for bugs fixed in the streamlining pass.
+test('a hidden parent cannot keep a grandchild question open through a stale answer',()=>{
+  const a=fixture(['sleep'],{sleepy:'no',sleep_attacks:'yes',cataplexy:'yes'});
+  assert.ok(!E.queue(a).some(s=>s.item.id==='sleep_attacks'||s.item.id==='cataplexy'));
+  assert.ok(!row(a,'narcolepsy').matched.length||!row(a,'narcolepsy').matched.some(e=>e.q==='cataplexy'));
+  a.sleepy='unsure';assert.ok(E.queue(a).some(s=>s.item.id==='cataplexy'));
+});
+test('IBS and pericarditis are reachable from a single obvious area',()=>{
+  assert.ok(E.evaluate(fixture(['bowel'],{pain_bowel:'yes',stool_pattern:'mixed',bowel_chronic:'yes'})).candidates.some(c=>c.id==='ibs'));
+  assert.ok(E.queue(fixture(['breathing'])).some(s=>s.item.id==='chest_position'));
+});
+test('a question is asked only when a candidate in play, an alert or a gate reads it',()=>{
+  const ids=a=>E.queue(a).map(s=>s.item.id);
+  assert.ok(!ids(fixture(['skin'])).includes('anatomy'));assert.ok(ids(fixture(['urinary'])).includes('anatomy'));
+  assert.ok(!ids(fixture(['weight'])).includes('pem'));assert.ok(ids(fixture(['energy'])).includes('pem'));
+  assert.ok(!ids(fixture(['urinary'])).includes('medicine_change'));
+  assert.ok(ids(fixture(['breathing'])).includes('cough_blood'),'alert questions in an open branch stay');
+  // Exhaustively: anything left out of the path is read by no candidate in play and no alert.
+  const alertReads=new Set();const walk=r=>{if(!r)return;if(r.all||r.any)(r.all||r.any).forEach(walk);else alertReads.add(r.q);};D.alerts.forEach(w=>walk(w.rule));
+  for(const d of D.domains){
+    const a=fixture([d.v],{tests:['thyroid','cbc','iron','b12','glucose','celiac','cortisol']}),r=E.evaluate(a),asked=new Set(r.activeIds);
+    for(const g of D.groups.filter(g=>g.domains.includes(d.v)))for(const q of g.items){
+      if(asked.has(q.id)||!E.eligible(q.when,a)||!E.eligible(g.when,a))continue;
+      assert.ok(!alertReads.has(q.id),d.v+': alert question '+q.id+' dropped');
+      assert.ok(!r.all.some(c=>[...c.support,...c.against].some(x=>x.q===q.id)),d.v+': '+q.id+' feeds a candidate in play');
+    }
+  }
+});
+test('warning signs replace the duplicated branch questions without losing their evidence',()=>{
+  assert.ok(row(fixture(['weight'],{heat:'yes',warning_signs:['weightloss']}),'hyperthyroid').matched.some(e=>e.q==='warning_signs'));
+  assert.ok(E.evaluate(fixture(['energy'],{warning_signs:['melena']})).warnings.some(w=>w.id==='stoolblood'));
+  const ibs=fixture(['bowel'],{pain_bowel:'yes',stool_pattern:'mixed'});
+  assert.ok(row(ibs,'ibs').matched.some(e=>e.q==='warning_signs'),'absent bleeding supports IBS');
+  ibs.warning_signs=['stoolblood'];assert.ok(row(ibs,'ibs').conflicts.some(e=>e.q==='warning_signs'));
+  ibs.warning_signs=['unsure'];assert.ok(row(ibs,'ibs').unknown.some(e=>e.q==='warning_signs'),'unsure is neither support nor conflict');
+});
+test('follow-ups an earlier answer rules out are skipped, and uncertainty keeps them',()=>{
+  const ids=a=>E.queue(a).map(s=>s.item.id);
+  assert.ok(!ids(fixture(['digestion'],{pain_site:'none'})).includes('fatty_pain'));assert.ok(ids(fixture(['digestion'],{pain_site:'unsure'})).includes('fatty_pain'));
+  assert.ok(!ids(fixture(['dizziness'],{dizzy_type:'faint'})).includes('head_turn'));assert.ok(!ids(fixture(['dizziness'],{dizzy_type:'spin'})).includes('upright'));
+  assert.ok(ids(fixture(['dizziness'],{dizzy_type:'mixed'})).includes('head_turn'));
+  assert.ok(!ids(fixture(['headache'],{age:'18_39'})).includes('head_new50'));assert.ok(ids(fixture(['headache'],{age:'65_plus'})).includes('head_new50'));
+  assert.ok(!ids(fixture(['bowel'],{stool_pattern:'constipation'})).includes('bowel_night'));
+  assert.ok(!ids(fixture(['skin'],{rash_shape:'hives'})).includes('rash_one_side'));assert.ok(ids(fixture(['skin'],{rash_shape:'other'})).includes('rash_one_side'));
+  assert.ok(!ids(fixture(['weight'],{tests:['thyroid'],lab_thyroid:'normal'})).includes('lab_trab'));assert.ok(ids(fixture(['weight'],{tests:['thyroid'],lab_thyroid:'unsure'})).includes('lab_trab'));
+});
+test('the replay diff reports band changes, not score drift within a band',()=>{
+  const a=fixture(['sleep','energy'],{snore:'yes',apnea:'yes',sleepy:'yes',unrefreshing:'yes'}),b={...a,unrefreshing:'no'};
+  assert.equal(row(a,'sleep_apnea').band,row(b,'sleep_apnea').band);assert.notEqual(row(a,'sleep_apnea').score,row(b,'sleep_apnea').score);
+  assert.equal(E.diff(E.evaluate(a),E.evaluate(b)).some(c=>c.id==='sleep_apnea'),false);
+});
+test('the emergency explanations live in the clinical data',()=>{
+  for(const o of D.context[0].opts){assert.ok(o.name&&o.why,o.v);assert.equal(E.emergency({urgent_now:[o.v]})[0].name,o.name);}
 });
 test('mixed answer patterns retain evidence, urgency and ranking invariants',()=>{
   let seed=20261025;

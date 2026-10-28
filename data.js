@@ -17,11 +17,13 @@ const n = (a, id) => (a[id] || []).length;
 const is = (a, id, v) => a[id] === v;
 const yes = (a, id) => a[id] === 'yes';
 const notNo = (a, id) => a[id] === 'yes' || a[id] === 'unsure';
+/* Depression's two gatekeeper symptoms are the two depression screens. */
+const core = a => yes(a, 's_dep') + yes(a, 's_anh');
 
 const YN = [
   { v: 'yes', t: 'Yes' },
   { v: 'no', t: 'No' },
-  { v: 'unsure', t: "I'm not sure" }
+  { v: 'unsure', t: 'Not sure' }
 ];
 
 /* ================================================================ CONTEXT */
@@ -31,38 +33,27 @@ const YN = [
 
 const CONTEXT = [
   {
-    id: 'c_why', k: 'pick', sect: 'Framing',
-    q: 'Before anything else — what are you actually here to sort out?',
-    help: 'This does not branch. It is recorded on the result so you can read it back later and see what you were answering about.',
-    opts: [
-      { v: 'a', t: 'Something specific I have been struggling with' },
-      { v: 'b', t: 'A general check on where I stand' },
-      { v: 'c', t: 'I am testing the tool, not answering honestly' },
-      { v: 'd', t: 'Curiosity about the diagnostic logic itself' }
-    ]
-  },
-  {
-    id: 'c_sub', k: 'yn', sect: 'Framing', flag: 'substance',
+    id: 'c_sub', k: 'yn',
     q: 'Over the period you will be describing, were you drinking heavily, using drugs, or coming off either?',
     help: 'Step 2 of the differential. Substance use and withdrawal can produce almost every symptom in this tool. A yes does not stop anything, but it flags every mood, anxiety and psychosis result as needing a substance-induced disorder ruled out first.'
   },
   {
-    id: 'c_med', k: 'yn', sect: 'Framing', flag: 'medical',
+    id: 'c_med', k: 'yn',
     q: 'Do you have, or might you have, a physical condition that could be causing this?',
     help: 'Step 3. Thyroid disease, anaemia, sleep apnoea, head injury, chronic pain, neurological conditions, long infections. This is the exclusion a self-report tool is worst at, which is exactly why it is asked out loud instead of assumed away.'
   },
   {
-    id: 'c_rx', k: 'yn', sect: 'Framing', flag: 'medication',
+    id: 'c_rx', k: 'yn',
     q: 'Did you start, stop, or change a medication around the time this began?',
     help: 'Steroids, hormonal contraceptives, isotretinoin, beta blockers, stimulants, antidepressants and withdrawal from any of them all belong here.'
   },
   {
-    id: 'c_stress', k: 'yn', sect: 'Framing', flag: 'stressor',
+    id: 'c_stress', k: 'yn', opens: ['adjust'],
     q: 'Did an identifiable stressful event happen in the three months before this started?',
     help: 'A move, a loss, a breakup, a job change, an illness. This decides whether adjustment disorder is even on the table at the end.'
   },
   {
-    id: 'c_norm', k: 'pick', sect: 'Framing',
+    id: 'c_norm', k: 'pick',
     q: 'Honestly — is what you are describing worse than what most people go through in the same situation?',
     help: 'Step 5: the boundary with normality. Distress that fits its cause and passes is not a disorder, and a tool that never asks this diagnoses everybody.',
     opts: [
@@ -77,35 +68,35 @@ const CONTEXT = [
 /* MINI-style gates. Answering yes or "not sure" queues the listed modules. */
 
 const SCREEN = [
-  { id: 's_dep', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when you felt down, empty or hopeless nearly every day?' },
-  { id: 's_anh', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when almost nothing gave you pleasure or interest any more?' },
-  { id: 's_pdd', opens: ['pdd'], q: 'Have you felt low more days than not for two years or longer?' },
-  { id: 's_man', opens: ['manic', 'hypo'], q: 'Has there been a period of days when you felt unusually high, wired, or unusually irritable, with far more energy than normal?' },
-  { id: 's_cyc', opens: ['cyclo'], q: 'Over two years or more, have your moods swung up and down repeatedly without ever reaching a full high or a full depression?' },
-  { id: 's_pan', opens: ['panic'], q: 'Have you had sudden rushes of intense fear or physical alarm that peaked within a few minutes?' },
-  { id: 's_ago', opens: ['agora'], q: 'Do you avoid transport, crowds, queues, shops or being far from home because escape or help might be hard?' },
-  { id: 's_soc', opens: ['sad'], q: 'Do social or performance situations frighten you because you might be judged, embarrassed or seen to be anxious?' },
-  { id: 's_gad', opens: ['gad'], q: 'Do you worry excessively about several different things, more days than not, and find it hard to stop?' },
-  { id: 's_pho', opens: ['phobia'], q: 'Is there a specific thing, animal or situation that reliably frightens you far more than it should?' },
-  { id: 's_ocd', opens: ['ocd'], q: 'Do unwanted thoughts keep forcing their way in, or do you feel driven to repeat actions like checking, washing, counting or ordering?' },
-  { id: 's_bdd', opens: ['bdd'], q: 'Are you preoccupied with something about your appearance that other people say is slight or cannot see?' },
-  { id: 's_hoard', opens: ['hoard'], q: 'Do you find it very hard to throw things away, to the point that rooms have become hard to use?' },
-  { id: 's_bfrb', opens: ['bfrb'], q: 'Do you repeatedly pull out your hair or pick at your skin, enough to cause damage?' },
-  { id: 's_ptsd', opens: ['ptsd'], q: 'Have you experienced or witnessed something involving death, serious injury or sexual violence that still intrudes on you?' },
-  { id: 's_ssd', opens: ['ssd', 'iad'], q: 'Do physical symptoms, or the fear of being seriously ill, take up a large amount of your attention?' },
-  { id: 's_dpdr', opens: ['dpdr'], q: 'Do you have episodes of feeling detached from yourself, or of the world seeming unreal or dreamlike?' },
-  { id: 's_aud', opens: ['aud'], q: 'Has your drinking caused problems, or been harder to control than you wanted?' },
-  { id: 's_sud', opens: ['sud'], q: 'Has your use of any other substance caused problems, or been harder to control than you wanted?' },
-  { id: 's_eat_r', opens: ['an'], q: 'Do you restrict what you eat, and is your weight low or falling, with a strong fear of gaining?' },
-  { id: 's_eat_b', opens: ['bn', 'bed'], q: 'Do you have episodes of eating an unusually large amount with a sense of being out of control?' },
-  { id: 's_ins', opens: ['insomnia'], q: 'Do you regularly struggle to fall asleep, stay asleep, or wake far too early?' },
-  { id: 's_adhd', opens: ['adhd'], q: 'Have inattention, restlessness or impulsivity been a lifelong problem for you across most areas of life?' },
-  { id: 's_psy', opens: ['psych'], q: 'Have you heard or seen things others did not, or held beliefs that others insisted were not true?' },
-  { id: 's_pp', opens: ['pp'], q: 'Since your late teens, have the same problems with relationships, identity or emotional control repeated across most of your life?' }
+  { id: 's_dep', k: 'yn', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when you felt down, empty or hopeless nearly every day?' },
+  { id: 's_anh', k: 'yn', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when almost nothing gave you pleasure or interest any more?' },
+  { id: 's_pdd', k: 'yn', opens: ['pdd'], q: 'Have you felt low more days than not for two years or longer?' },
+  { id: 's_man', k: 'yn', opens: ['manic', 'hypo'], q: 'Has there been a period of days when you felt unusually high, wired, or unusually irritable, with far more energy than normal?' },
+  { id: 's_cyc', k: 'yn', opens: ['cyclo'], q: 'Over two years or more, have your moods swung up and down repeatedly without ever reaching a full high or a full depression?' },
+  { id: 's_pan', k: 'yn', opens: ['panic'], q: 'Have you had sudden rushes of intense fear or physical alarm that peaked within a few minutes?' },
+  { id: 's_ago', k: 'yn', opens: ['agora'], q: 'Do you avoid transport, crowds, queues, shops or being far from home because escape or help might be hard?' },
+  { id: 's_soc', k: 'yn', opens: ['sad'], q: 'Do social or performance situations frighten you because you might be judged, embarrassed or seen to be anxious?' },
+  { id: 's_gad', k: 'yn', opens: ['gad'], q: 'Do you worry excessively about several different things, more days than not, and find it hard to stop?' },
+  { id: 's_pho', k: 'yn', opens: ['phobia'], q: 'Is there a specific thing, animal or situation that reliably frightens you far more than it should?' },
+  { id: 's_ocd', k: 'yn', opens: ['ocd'], q: 'Do unwanted thoughts keep forcing their way in, or do you feel driven to repeat actions like checking, washing, counting or ordering?' },
+  { id: 's_bdd', k: 'yn', opens: ['bdd'], q: 'Are you preoccupied with something about your appearance that other people say is slight or cannot see?' },
+  { id: 's_hoard', k: 'yn', opens: ['hoard'], q: 'Do you find it very hard to part with possessions, to the point that rooms can no longer be used as intended?' },
+  { id: 's_bfrb', k: 'yn', opens: ['bfrb'], q: 'Do you repeatedly pull out your hair or pick at your skin, enough to cause damage?' },
+  { id: 's_ptsd', k: 'yn', opens: ['ptsd'], q: 'Have you experienced or witnessed something involving death, serious injury or sexual violence that still intrudes on you?' },
+  { id: 's_ssd', k: 'yn', opens: ['ssd', 'iad'], q: 'Do physical symptoms, or the fear of being seriously ill, take up a large amount of your attention?' },
+  { id: 's_dpdr', k: 'yn', opens: ['dpdr'], q: 'Do you have episodes of feeling detached from yourself, or of the world seeming unreal or dreamlike?' },
+  { id: 's_aud', k: 'yn', opens: ['aud'], q: 'Has your drinking caused problems, or been harder to control than you wanted?' },
+  { id: 's_sud', k: 'yn', opens: ['sud'], q: 'Has your use of any other substance caused problems, or been harder to control than you wanted?' },
+  { id: 's_eat_r', k: 'yn', opens: ['an'], q: 'Do you restrict what you eat, and is your weight low or falling, with a strong fear of gaining?' },
+  { id: 's_eat_b', k: 'yn', opens: ['bn', 'bed'], q: 'Do you have episodes of eating an unusually large amount with a sense of being out of control?' },
+  { id: 's_ins', k: 'yn', opens: ['insomnia'], q: 'Do you regularly struggle to fall asleep, stay asleep, or wake far too early?' },
+  { id: 's_adhd', k: 'yn', opens: ['adhd'], q: 'Have inattention, restlessness or impulsivity been a lifelong problem for you across most areas of life?' },
+  { id: 's_psy', k: 'yn', opens: ['psych'], q: 'Have you heard or seen things others did not, or held beliefs that others insisted were not true?' },
+  { id: 's_pp', k: 'yn', opens: ['pp'], q: 'Since your late teens, have the same problems with relationships, identity or emotional control repeated across most of your life?' }
 ];
 
 /* ================================================================ MODULES */
-/* status: 'met' | 'near' | 'out' | 'partial'
+/* status: 'met' | 'near' | 'out' (the engine adds 'unresolved')
    Each criterion carries its own failure sentence — that sentence is the whole
    point of the tool, so it is written to explain the rule, not just report it. */
 
@@ -116,15 +107,6 @@ const MODULES = [
     id: 'mde', name: 'Major Depressive Disorder', chap: 'Depressive',
     blurb: 'A depressive episode is gated by two symptoms, not by how many you have in total.',
     items: [
-      {
-        id: 'mde_core', k: 'multi',
-        q: 'During the worst two weeks, which of these was true nearly every day, most of the day?',
-        opts: [
-          { v: 'mood', t: 'I felt down, empty or hopeless' },
-          { v: 'anh', t: 'I lost interest or pleasure in almost everything' }
-        ],
-        help: 'These two are the gatekeepers. Without at least one of them present nearly every day, no number of other symptoms produces a depressive episode.'
-      },
       {
         id: 'mde_sx', k: 'multi',
         q: 'Over those same two weeks, which of these also happened?',
@@ -144,13 +126,13 @@ const MODULES = [
     criteria: [
       {
         id: 'A', label: 'At least one core symptom',
-        test: a => n(a, 'mde_core') >= 1,
+        test: a => core(a) >= 1,
         why: () => 'Neither persistent low mood nor loss of interest was present nearly every day. Both are gatekeeper symptoms — without one of them, the other seven cannot add up to a depressive episode no matter how many are ticked.'
       },
       {
         id: 'B', label: 'Five or more symptoms in total',
-        test: a => n(a, 'mde_core') + n(a, 'mde_sx') >= 5,
-        why: a => `Only ${n(a, 'mde_core') + n(a, 'mde_sx')} of the 9 symptoms were present. The threshold is 5. This is a counting criterion, not a severity judgement — four severe symptoms do not qualify and five mild ones do.`
+        test: a => core(a) + n(a, 'mde_sx') >= 5,
+        why: a => `Only ${core(a) + n(a, 'mde_sx')} of the 9 symptoms were present. The threshold is 5. This is a counting criterion, not a severity judgement — four severe symptoms do not qualify and five mild ones do.`
       },
       {
         id: 'C', label: 'Two weeks, nearly every day',
@@ -165,14 +147,13 @@ const MODULES = [
         why: () => 'The symptoms did not cause significant distress or interfere with functioning. This is the boundary with normality, and it is a real criterion rather than a formality.'
       }
     ],
-    near: a => n(a, 'mde_core') >= 1 && n(a, 'mde_core') + n(a, 'mde_sx') >= 3 && notNo(a, 'mde_dur')
+    near: a => core(a) + n(a, 'mde_sx') >= 3 && notNo(a, 'mde_dur')
   },
 
   {
     id: 'pdd', name: 'Persistent Depressive Disorder', chap: 'Depressive',
     blurb: 'Lower intensity, far longer duration. Defined by the two-year floor.',
     items: [
-      { id: 'pdd_dur', k: 'yn', q: 'Have you felt low more days than not for two years or longer?' },
       {
         id: 'pdd_sx', k: 'multi',
         q: 'Across those years, which of these have been present while you were low?',
@@ -191,7 +172,7 @@ const MODULES = [
     criteria: [
       {
         id: 'A', label: 'Two years of depressed mood',
-        test: a => yes(a, 'pdd_dur'),
+        test: a => yes(a, 's_pdd'),
         why: () => 'The two-year floor was not met. Under two years this is a depressive episode, not a persistent depressive disorder — the duration is the whole distinction between them.'
       },
       {
@@ -206,7 +187,7 @@ const MODULES = [
       },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'pdd_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => notNo(a, 'pdd_dur') && n(a, 'pdd_sx') >= 1
+    near: a => notNo(a, 's_pdd') && n(a, 'pdd_sx') >= 1
   },
 
   {
@@ -225,7 +206,6 @@ const MODULES = [
         ],
         help: 'This changes the symptom threshold later: an irritable-only mood requires four extra symptoms instead of three.'
       },
-      { id: 'man_ene', k: 'yn', q: 'At the same time, was your energy or activity level clearly and persistently higher than normal for you?', help: 'Increased energy is a required companion to the mood, not an optional extra. Mood alone does not qualify.' },
       {
         id: 'man_dur', k: 'pick',
         q: 'How long did the longest such period last?',
@@ -268,7 +248,7 @@ const MODULES = [
       },
       {
         id: 'B', label: 'Increased energy or activity alongside it',
-        test: a => notNo(a, 'man_ene'),
+        test: a => notNo(a, 's_man'),
         why: () => 'The mood change was not accompanied by a clear, persistent increase in energy or goal-directed activity. Since DSM-5 this is a required part of the episode, not an optional feature — mood alone is not enough.'
       },
       {
@@ -299,11 +279,10 @@ const MODULES = [
     blurb: 'One hypomanic episode plus one depressive episode. Both halves are required.',
     shared: 'mania',
     items: [],
-    needs: ['manic'],
     criteria: [
       {
         id: 'A', label: 'Hypomanic episode: mood plus energy',
-        test: a => ['a', 'b', 'c'].includes(a.man_mood) && notNo(a, 'man_ene'),
+        test: a => ['a', 'b', 'c'].includes(a.man_mood) && notNo(a, 's_man'),
         why: () => 'No distinct period of elevated or irritable mood with increased energy was described.'
       },
       {
@@ -339,18 +318,16 @@ const MODULES = [
     id: 'cyclo', name: 'Cyclothymic Disorder', chap: 'Bipolar',
     blurb: 'Two years of swings that never reach full episodes in either direction.',
     items: [
-      { id: 'cyc_dur', k: 'yn', q: 'For two years or more, have you had many periods of hypomanic-type symptoms and many periods of low mood?' },
-      { id: 'cyc_sub', k: 'yn', q: 'Did those periods stay below the level of a full high or a full depressive episode?' },
       { id: 'cyc_gap', k: 'yn', q: 'Across those two years, were you free of symptoms for more than two months at a stretch?' },
       { id: 'cyc_imp', k: 'yn', q: 'Has it caused significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Two years of alternating symptoms', test: a => yes(a, 'cyc_dur'), why: () => 'The two-year pattern of alternating high and low periods was not met.' },
-      { id: 'B', label: 'Never reaching full episode criteria', test: a => notNo(a, 'cyc_sub'), why: () => 'The periods reached full episode level. Once a full hypomanic or depressive episode occurs, the diagnosis moves to bipolar or depressive disorder and cyclothymia no longer applies.' },
+      { id: 'A', label: 'Two years of alternating symptoms', test: a => yes(a, 's_cyc'), why: () => 'The two-year pattern of alternating high and low periods was not met.' },
+      { id: 'B', label: 'Never reaching full episode criteria', test: a => notNo(a, 's_cyc'), why: () => 'The periods reached full episode level. Once a full hypomanic or depressive episode occurs, the diagnosis moves to bipolar or depressive disorder and cyclothymia no longer applies.' },
       { id: 'C', label: 'No symptom-free gap over two months', test: a => a.cyc_gap === 'no' || a.cyc_gap === 'unsure', why: () => 'There was a symptom-free stretch of more than two months, which breaks the required continuity.' },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'cyc_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => notNo(a, 'cyc_dur')
+    near: a => notNo(a, 's_cyc')
   },
 
   /* --------------------------------------------------------- ANXIETY ---- */
@@ -358,7 +335,6 @@ const MODULES = [
     id: 'panic', name: 'Panic Disorder', chap: 'Anxiety',
     blurb: 'Panic attacks alone are not a disorder. The month of worry afterwards is.',
     items: [
-      { id: 'pan_att', k: 'yn', q: 'Have you had sudden surges of intense fear or discomfort that reached their peak within minutes?' },
       {
         id: 'pan_sx', k: 'multi',
         q: 'During those surges, which of these occurred?',
@@ -393,12 +369,12 @@ const MODULES = [
       }
     ],
     criteria: [
-      { id: 'A', label: 'Recurrent panic attacks', test: a => notNo(a, 'pan_att'), why: () => 'No recurrent abrupt surges of fear peaking within minutes were described.' },
+      { id: 'A', label: 'Recurrent panic attacks', test: a => notNo(a, 's_pan'), why: () => 'No recurrent abrupt surges of fear peaking within minutes were described.' },
       { id: 'B', label: 'Four or more attack symptoms', test: a => n(a, 'pan_sx') >= 4, why: a => `Only ${n(a, 'pan_sx')} of the 13 attack symptoms were present; 4 are required for the surge to count as a panic attack rather than an anxiety spike.` },
       { id: 'C', label: 'At least some attacks unexpected', test: a => ['a', 'c'].includes(a.pan_cue), why: () => 'Every attack was triggered by an identifiable cue. Panic disorder requires at least some unexpected attacks; fully cued attacks belong to the disorder that supplies the cue.' },
       { id: 'D', label: 'A month of anticipatory worry or avoidance', test: a => a.pan_wor === 'a', why: () => 'The month of persistent worry about further attacks, or of behaviour change to avoid them, was absent. Panic attacks by themselves are common and are not a disorder — this consequence is what makes it one.' }
     ],
-    near: a => notNo(a, 'pan_att') && n(a, 'pan_sx') >= 2
+    near: a => notNo(a, 's_pan') && n(a, 'pan_sx') >= 2
   },
 
   {
@@ -414,19 +390,18 @@ const MODULES = [
           { v: 'que', t: 'Queues or crowds' }, { v: 'alo', t: 'Being outside the home alone' }
         ]
       },
-      { id: 'ago_why', k: 'yn', q: 'Is the fear specifically that escape might be difficult, or help unavailable, if something went wrong?', help: 'This reason is the diagnosis. Avoiding crowds because of contamination fear is OCD; avoiding them because of being judged is social anxiety. Same behaviour, different disorder.' },
       { id: 'ago_alw', k: 'yn', q: 'Do those situations almost always provoke fear, rather than occasionally?' },
       { id: 'ago_dur', k: 'yn', q: 'Has this lasted six months or more?' },
       { id: 'ago_imp', k: 'yn', q: 'Does it cause significant distress or restrict your life?' }
     ],
     criteria: [
       { id: 'A', label: 'Two or more situation types', test: a => n(a, 'ago_sit') >= 2, why: a => `${n(a, 'ago_sit')} of the 5 situation types were endorsed; 2 are required. A single feared situation is a specific phobia, not agoraphobia.` },
-      { id: 'B', label: 'Feared for escape or help reasons', test: a => notNo(a, 'ago_why'), why: () => 'The situations were not feared because escape would be hard or help unavailable. That specific reason is what defines agoraphobia — without it the avoidance belongs to another disorder.' },
+      { id: 'B', label: 'Feared for escape or help reasons', test: a => notNo(a, 's_ago'), why: () => 'The situations were not feared because escape would be hard or help unavailable. That specific reason is what defines agoraphobia — without it the avoidance belongs to another disorder.' },
       { id: 'C', label: 'Fear is near-invariable', test: a => notNo(a, 'ago_alw'), why: () => 'The situations did not almost always provoke fear.' },
       { id: 'D', label: 'Six months or more', test: a => notNo(a, 'ago_dur'), why: () => 'The six-month duration was not met. Every anxiety disorder in this chapter carries that floor, to keep transient fear out.' },
       { id: 'E', label: 'Distress or impairment', test: a => notNo(a, 'ago_imp'), why: () => 'No significant distress or restriction was reported.' }
     ],
-    near: a => n(a, 'ago_sit') >= 1 && notNo(a, 'ago_why')
+    near: a => n(a, 'ago_sit') >= 1 && notNo(a, 's_ago')
   },
 
   {
@@ -442,7 +417,6 @@ const MODULES = [
           { v: 'per', t: 'Performing or speaking to a group' }
         ]
       },
-      { id: 'soc_fea', k: 'yn', q: 'Is the fear that you will be judged negatively, humiliated, or that your anxiety will be visible?' },
       { id: 'soc_alw', k: 'yn', q: 'Do those situations almost always provoke the fear?' },
       { id: 'soc_avo', k: 'yn', q: 'Do you avoid them, or endure them with intense discomfort?' },
       { id: 'soc_out', k: 'yn', q: 'Is the fear out of proportion to any real threat in the situation?' },
@@ -451,22 +425,20 @@ const MODULES = [
     ],
     criteria: [
       { id: 'A', label: 'Fear of one or more social situations', test: a => n(a, 'soc_sit') >= 1, why: () => 'No social situation was identified as provoking marked fear.' },
-      { id: 'B', label: 'Fear is specifically of scrutiny', test: a => notNo(a, 'soc_fea'), why: () => 'The fear was not of negative evaluation or visible anxiety. Avoiding people for other reasons — low mood, exhaustion, sensory overload, paranoia — is not social anxiety disorder, and this is the single most common misattribution in the chapter.' },
+      { id: 'B', label: 'Fear is specifically of scrutiny', test: a => notNo(a, 's_soc'), why: () => 'The fear was not of negative evaluation or visible anxiety. Avoiding people for other reasons — low mood, exhaustion, sensory overload, paranoia — is not social anxiety disorder, and this is the single most common misattribution in the chapter.' },
       { id: 'C', label: 'Near-invariable and avoided', test: a => notNo(a, 'soc_alw') && notNo(a, 'soc_avo'), why: () => 'The situations were not almost always feared, or were not avoided or endured with intense distress.' },
       { id: 'D', label: 'Out of proportion', test: a => notNo(a, 'soc_out'), why: () => 'The fear was proportionate to the actual threat. Realistic apprehension in a genuinely hostile setting is not a disorder.' },
       { id: 'E', label: 'Six months or more', test: a => notNo(a, 'soc_dur'), why: () => 'The six-month duration was not met.' },
       { id: 'F', label: 'Distress or impairment', test: a => notNo(a, 'soc_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => n(a, 'soc_sit') >= 1 && notNo(a, 'soc_fea')
+    near: a => n(a, 'soc_sit') >= 1 && notNo(a, 's_soc')
   },
 
   {
     id: 'gad', name: 'Generalized Anxiety Disorder', chap: 'Anxiety',
     blurb: 'The residual worry diagnosis — it only applies when the worry is not owned by something else.',
     items: [
-      { id: 'gad_wor', k: 'yn', q: 'Have you had excessive anxiety and worry, more days than not, about a number of different events or activities?' },
       { id: 'gad_dur', k: 'yn', q: 'Has that been going on for six months or more?' },
-      { id: 'gad_ctl', k: 'yn', q: 'Do you find the worry difficult to control?' },
       {
         id: 'gad_sx', k: 'multi',
         q: 'Which of these have accompanied the worry, more days than not?',
@@ -492,13 +464,13 @@ const MODULES = [
       { id: 'gad_imp', k: 'yn', q: 'Does it cause significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Excessive worry about several things', test: a => notNo(a, 'gad_wor'), why: () => 'Excessive worry across a number of different domains was not described.' },
+      { id: 'A', label: 'Excessive worry about several things', test: a => notNo(a, 's_gad'), why: () => 'Excessive worry across a number of different domains was not described.' },
       { id: 'B', label: 'Six months, more days than not', test: a => notNo(a, 'gad_dur'), why: () => 'The six-month duration was not met.' },
-      { id: 'C', label: 'Difficult to control', test: a => notNo(a, 'gad_ctl'), why: () => 'The worry was controllable. Ordinary worry that can be set aside is not GAD however unpleasant it is.' },
+      { id: 'C', label: 'Difficult to control', test: a => notNo(a, 's_gad'), why: () => 'The worry was controllable. Ordinary worry that can be set aside is not GAD however unpleasant it is.' },
       { id: 'D', label: 'Three or more physical symptoms', test: a => n(a, 'gad_sx') >= 3, why: a => `Only ${n(a, 'gad_sx')} of the 6 accompanying symptoms were present; 3 are required in adults.` },
       { id: 'E', label: 'Distress or impairment', test: a => notNo(a, 'gad_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => notNo(a, 'gad_wor') && n(a, 'gad_sx') >= 1
+    near: a => notNo(a, 's_gad') && n(a, 'gad_sx') >= 1
   },
 
   {
@@ -514,21 +486,19 @@ const MODULES = [
           { v: 'oth', t: 'Something else specific' }
         ]
       },
-      { id: 'pho_imm', k: 'yn', q: 'Does the object or situation almost always provoke immediate fear?' },
       { id: 'pho_avo', k: 'yn', q: 'Do you avoid it, or endure it with intense fear?' },
-      { id: 'pho_out', k: 'yn', q: 'Is the fear out of proportion to the actual danger?' },
       { id: 'pho_dur', k: 'yn', q: 'Has it lasted six months or more?' },
       { id: 'pho_imp', k: 'yn', q: 'Does it cause significant distress or impairment?' }
     ],
     criteria: [
       { id: 'A', label: 'A specific feared object or situation', test: a => n(a, 'pho_obj') >= 1, why: () => 'No specific object or situation was identified.' },
-      { id: 'B', label: 'Immediate, near-invariable fear', test: a => notNo(a, 'pho_imm'), why: () => 'The fear was not immediate and near-invariable on encountering the object.' },
+      { id: 'B', label: 'Immediate, near-invariable fear', test: a => notNo(a, 's_pho'), why: () => 'The fear was not immediate and near-invariable on encountering the object.' },
       { id: 'C', label: 'Avoided or endured with intense fear', test: a => notNo(a, 'pho_avo'), why: () => 'The situation was neither avoided nor endured with intense fear.' },
-      { id: 'D', label: 'Out of proportion', test: a => notNo(a, 'pho_out'), why: () => 'The fear was proportionate to the real danger, which is caution rather than phobia.' },
+      { id: 'D', label: 'Out of proportion', test: a => notNo(a, 's_pho'), why: () => 'The fear was proportionate to the real danger, which is caution rather than phobia.' },
       { id: 'E', label: 'Six months or more', test: a => notNo(a, 'pho_dur'), why: () => 'The six-month duration was not met.' },
       { id: 'F', label: 'Distress or impairment', test: a => notNo(a, 'pho_imp'), why: () => 'The fear did not cause significant distress or impairment. Most specific fears never reach this bar, which is why phobia is far rarer than fear.' }
     ],
-    near: a => n(a, 'pho_obj') >= 1 && notNo(a, 'pho_imm')
+    near: a => n(a, 'pho_obj') >= 1 && notNo(a, 's_pho')
   },
 
   /* -------------------------------------------------- OCD AND RELATED --- */
@@ -561,57 +531,46 @@ const MODULES = [
   {
     id: 'bdd', name: 'Body Dysmorphic Disorder', chap: 'Obsessive-Compulsive',
     items: [
-      { id: 'bdd_pre', k: 'yn', q: 'Are you preoccupied with one or more flaws in your appearance that others cannot see or think are slight?' },
       { id: 'bdd_beh', k: 'yn', q: 'Do you perform repetitive behaviours about it — mirror checking, grooming, skin picking, seeking reassurance, comparing yourself?' },
       { id: 'bdd_wgt', k: 'yn', q: 'Is the concern entirely about being fat, or about your weight?', help: 'If the answer is yes, this is routed to the eating-disorder branch instead. The two look identical from outside and are not the same diagnosis.' },
       { id: 'bdd_imp', k: 'yn', q: 'Does it cause significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Preoccupation with a perceived flaw', test: a => notNo(a, 'bdd_pre'), why: () => 'No preoccupation with a perceived appearance flaw was described.' },
+      { id: 'A', label: 'Preoccupation with a perceived flaw', test: a => notNo(a, 's_bdd'), why: () => 'No preoccupation with a perceived appearance flaw was described.' },
       { id: 'B', label: 'Repetitive behaviours or mental acts', test: a => notNo(a, 'bdd_beh'), why: () => 'No repetitive checking, grooming, comparing or reassurance-seeking was reported. Dissatisfaction with appearance without these behaviours is not this disorder.' },
       { id: 'C', label: 'Distress or impairment', test: a => notNo(a, 'bdd_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => notNo(a, 'bdd_pre')
+    near: a => notNo(a, 's_bdd')
   },
 
   {
     id: 'hoard', name: 'Hoarding Disorder', chap: 'Obsessive-Compulsive',
     items: [
-      { id: 'ho_dis', k: 'yn', q: 'Do you have persistent difficulty parting with possessions, regardless of their actual value?' },
       { id: 'ho_nee', k: 'yn', q: 'Is that because of a felt need to keep them, and distress at the thought of discarding them?' },
-      { id: 'ho_clu', k: 'yn', q: 'Has the accumulation made living areas so cluttered that they cannot be used as intended?' },
       { id: 'ho_imp', k: 'yn', q: 'Does it cause significant distress or impairment, including an unsafe environment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Persistent difficulty discarding', test: a => notNo(a, 'ho_dis'), why: () => 'Persistent difficulty parting with possessions was not described.' },
+      { id: 'A', label: 'Persistent difficulty discarding', test: a => notNo(a, 's_hoard'), why: () => 'Persistent difficulty parting with possessions was not described.' },
       { id: 'B', label: 'Driven by perceived need and distress', test: a => notNo(a, 'ho_nee'), why: () => 'The difficulty was not driven by a felt need to save or by distress at discarding.' },
-      { id: 'C', label: 'Living areas congested', test: a => notNo(a, 'ho_clu'), why: () => 'Living areas were not so cluttered as to be unusable. This is the criterion that separates hoarding disorder from ordinary clutter or collecting, and it is the one most often assumed rather than checked.' },
+      { id: 'C', label: 'Living areas congested', test: a => notNo(a, 's_hoard'), why: () => 'Living areas were not so cluttered as to be unusable. This is the criterion that separates hoarding disorder from ordinary clutter or collecting, and it is the one most often assumed rather than checked.' },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'ho_imp'), why: () => 'No significant distress, impairment or safety problem was reported.' }
     ],
-    near: a => notNo(a, 'ho_dis')
+    near: a => notNo(a, 's_hoard')
   },
 
   {
     id: 'bfrb', name: 'Hair-Pulling / Skin-Picking Disorder', chap: 'Obsessive-Compulsive',
     items: [
-      {
-        id: 'bf_wha', k: 'pick', q: 'Which applies?',
-        opts: [
-          { v: 'a', t: 'Pulling out my hair' }, { v: 'b', t: 'Picking at my skin' },
-          { v: 'c', t: 'Both' }, { v: 'd', t: 'Neither' }
-        ]
-      },
-      { id: 'bf_los', k: 'yn', q: 'Has it caused noticeable hair loss or skin lesions?' },
       { id: 'bf_try', k: 'yn', q: 'Have you repeatedly tried to stop or cut down?' },
       { id: 'bf_imp', k: 'yn', q: 'Does it cause significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Recurrent pulling or picking', test: a => ['a', 'b', 'c'].includes(a.bf_wha), why: () => 'Neither recurrent hair pulling nor skin picking was described.' },
-      { id: 'B', label: 'Resulting hair loss or lesions', test: a => notNo(a, 'bf_los'), why: () => 'No resulting hair loss or skin lesions were reported. The visible consequence is part of the definition.' },
+      { id: 'A', label: 'Recurrent pulling or picking', test: a => notNo(a, 's_bfrb'), why: () => 'Neither recurrent hair pulling nor skin picking was described.' },
+      { id: 'B', label: 'Resulting hair loss or lesions', test: a => notNo(a, 's_bfrb'), why: () => 'No resulting hair loss or skin lesions were reported. The visible consequence is part of the definition.' },
       { id: 'C', label: 'Repeated attempts to stop', test: a => notNo(a, 'bf_try'), why: () => 'No repeated attempts to stop or reduce were reported.' },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'bf_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => ['a', 'b', 'c'].includes(a.bf_wha)
+    near: a => notNo(a, 's_bfrb')
   },
 
   /* ------------------------------------------------ TRAUMA AND STRESS --- */
@@ -630,17 +589,6 @@ const MODULES = [
           { v: 'e', t: 'None of these — the event was distressing but not of this kind' }
         ],
         help: 'Criterion A is narrow on purpose. Divorce, job loss, humiliation and bullying are genuinely traumatic in ordinary language but do not meet this bar, and the diagnosis stops here when they are the event.'
-      },
-      {
-        id: 'pt_int', k: 'multi',
-        q: 'Which intrusion symptoms have been present since?',
-        opts: [
-          { v: 'mem', t: 'Unwanted, distressing memories that push in' },
-          { v: 'dre', t: 'Recurrent nightmares about it' },
-          { v: 'fla', t: 'Flashbacks — feeling or acting as if it were recurring' },
-          { v: 'dis', t: 'Intense distress at reminders' },
-          { v: 'phy', t: 'Strong physical reactions to reminders' }
-        ]
       },
       {
         id: 'pt_avo', k: 'multi',
@@ -678,31 +626,29 @@ const MODULES = [
     ],
     criteria: [
       { id: 'A', label: 'Qualifying exposure', test: a => ['a', 'b', 'c', 'd'].includes(a.pt_eve), why: () => 'The event did not meet criterion A — exposure to actual or threatened death, serious injury, or sexual violence. This is the narrowest gate in the manual and it stops many genuinely distressing experiences. Where the event is real but does not qualify here, adjustment disorder is usually the correct home.' },
-      { id: 'B', label: 'One or more intrusion symptoms', test: a => n(a, 'pt_int') >= 1, why: () => 'No intrusion symptoms were present. At least one is required.' },
+      { id: 'B', label: 'Intrusion symptoms', test: a => notNo(a, 's_ptsd'), why: () => 'The event does not intrude through memories, nightmares, flashbacks or reactions to reminders. At least one intrusion symptom is required.' },
       { id: 'C', label: 'One or more avoidance symptoms', test: a => n(a, 'pt_avo') >= 1, why: () => 'Neither internal nor external avoidance was present. At least one is required, and this cluster is the one most often missing when the other three are full.' },
       { id: 'D', label: 'Two or more cognition and mood changes', test: a => n(a, 'pt_cog') >= 2, why: a => `Only ${n(a, 'pt_cog')} of the 7 cognition and mood changes were present; 2 are required.` },
       { id: 'E', label: 'Two or more arousal changes', test: a => n(a, 'pt_aro') >= 2, why: a => `Only ${n(a, 'pt_aro')} of the 6 arousal and reactivity changes were present; 2 are required.` },
       { id: 'F', label: 'More than one month', test: a => notNo(a, 'pt_dur'), why: () => 'The disturbance has lasted under a month. Under a month with the same picture is acute stress disorder, not PTSD.' },
       { id: 'G', label: 'Distress or impairment', test: a => notNo(a, 'pt_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => ['a', 'b', 'c', 'd'].includes(a.pt_eve) && n(a, 'pt_int') >= 1
+    near: a => ['a', 'b', 'c', 'd'].includes(a.pt_eve) && notNo(a, 's_ptsd')
   },
 
   {
     id: 'adjust', name: 'Adjustment Disorder', chap: 'Trauma',
     blurb: 'The residual category. It only applies when nothing else does.',
     items: [
-      { id: 'adj_lnk', k: 'yn', q: 'Did the symptoms begin within three months of that stressor?' },
       { id: 'adj_out', k: 'yn', q: 'Is the distress out of proportion to the stressor, or is it clearly impairing your functioning?' },
       { id: 'adj_end', k: 'yn', q: 'Has the stressor now ended more than six months ago, with the symptoms still going?' }
     ],
     criteria: [
-      { id: 'A', label: 'Identifiable stressor', test: (a, r, ctx) => notNo(ctx, 'c_stress'), why: () => 'No identifiable stressor within three months was reported at the start.' },
-      { id: 'B', label: 'Onset within three months', test: a => notNo(a, 'adj_lnk'), why: () => 'The symptoms did not begin within three months of the stressor.' },
-      { id: 'C', label: 'Out of proportion or impairing', test: a => notNo(a, 'adj_out'), why: () => 'The reaction was proportionate and not impairing, which is an expected response rather than a disorder.' },
-      { id: 'D', label: 'Not persisting past six months after the stressor ended', test: a => a.adj_end !== 'yes', why: () => 'The symptoms have continued more than six months after the stressor and its consequences ended, which takes it outside adjustment disorder.' }
+      { id: 'A', label: 'A stressor within three months before onset', test: a => notNo(a, 'c_stress'), why: () => 'No identifiable stressor in the three months before onset was reported at the start.' },
+      { id: 'B', label: 'Out of proportion or impairing', test: a => notNo(a, 'adj_out'), why: () => 'The reaction was proportionate and not impairing, which is an expected response rather than a disorder.' },
+      { id: 'C', label: 'Not persisting past six months after the stressor ended', test: a => a.adj_end !== 'yes', why: () => 'The symptoms have continued more than six months after the stressor and its consequences ended, which takes it outside adjustment disorder.' }
     ],
-    near: a => notNo(a, 'adj_lnk')
+    near: a => notNo(a, 'c_stress') && notNo(a, 'adj_out')
   },
 
   /* -------------------------------------- SOMATIC AND DISSOCIATIVE ------ */
@@ -758,25 +704,17 @@ const MODULES = [
   {
     id: 'dpdr', name: 'Depersonalization / Derealization Disorder', chap: 'Dissociative',
     items: [
-      {
-        id: 'dp_exp', k: 'pick', q: 'Which describes the experience?',
-        opts: [
-          { v: 'a', t: 'Detached from myself — watching myself from outside, unreal body or feelings' },
-          { v: 'b', t: 'The world feels unreal — dreamlike, flat, foggy, visually distorted' },
-          { v: 'c', t: 'Both' }, { v: 'd', t: 'Neither' }
-        ]
-      },
       { id: 'dp_rea', k: 'yn', q: 'During those episodes, did you know it was not literally true?', help: 'Intact reality testing is required. If the belief is held as literally true, the branch moves to the psychotic spectrum.' },
       { id: 'dp_per', k: 'yn', q: 'Have the experiences been persistent or recurrent, rather than one-off?' },
       { id: 'dp_imp', k: 'yn', q: 'Do they cause significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'Depersonalization or derealization', test: a => ['a', 'b', 'c'].includes(a.dp_exp), why: () => 'Neither depersonalization nor derealization was described.' },
+      { id: 'A', label: 'Depersonalization or derealization', test: a => notNo(a, 's_dpdr'), why: () => 'Neither depersonalization nor derealization was described.' },
       { id: 'B', label: 'Persistent or recurrent', test: a => notNo(a, 'dp_per'), why: () => 'The experiences were isolated rather than persistent or recurrent. Brief episodes are extremely common in the general population and are not a disorder.' },
       { id: 'C', label: 'Reality testing intact', test: a => notNo(a, 'dp_rea'), why: () => 'Reality testing was not intact during the episodes, which takes this out of the dissociative chapter and into the psychotic spectrum.' },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'dp_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => ['a', 'b', 'c'].includes(a.dp_exp)
+    near: a => notNo(a, 's_dpdr')
   },
 
   /* ---------------------------------------------------------- SUBSTANCE - */
@@ -808,20 +746,12 @@ const MODULES = [
       { id: 'B', label: 'Impairment or distress', test: a => notNo(a, 'au_imp'), why: () => 'No clinically significant impairment or distress was reported.' }
     ],
     severity: a => { const c = n(a, 'au_c'); return c >= 6 ? 'severe' : c >= 4 ? 'moderate' : c >= 2 ? 'mild' : null; },
-    near: a => n(a, 'au_c') === 1
+    near: a => n(a, 'au_c') >= 1
   },
 
   {
     id: 'sud', name: 'Substance Use Disorder (non-alcohol)', chap: 'Substance',
     items: [
-      {
-        id: 'su_w', k: 'multi', q: 'Which substances are involved?',
-        opts: [
-          { v: 'can', t: 'Cannabis' }, { v: 'sti', t: 'Stimulants' }, { v: 'opi', t: 'Opioids' },
-          { v: 'sed', t: 'Sedatives or sleeping pills' }, { v: 'hal', t: 'Hallucinogens' },
-          { v: 'nic', t: 'Nicotine' }, { v: 'oth', t: 'Something else' }
-        ]
-      },
       {
         id: 'su_c', k: 'multi',
         q: 'Within the last twelve months, which of these were true of that use?',
@@ -842,12 +772,11 @@ const MODULES = [
       { id: 'su_imp', k: 'yn', q: 'Has it caused clinically significant impairment or distress?' }
     ],
     criteria: [
-      { id: 'A', label: 'A substance identified', test: a => n(a, 'su_w') >= 1, why: () => 'No substance was identified.' },
-      { id: 'B', label: 'Two or more criteria in twelve months', test: a => n(a, 'su_c') >= 2, why: a => `Only ${n(a, 'su_c')} of the 11 criteria were endorsed; 2 are required.` },
-      { id: 'C', label: 'Impairment or distress', test: a => notNo(a, 'su_imp'), why: () => 'No clinically significant impairment or distress was reported.' }
+      { id: 'A', label: 'Two or more criteria in twelve months', test: a => n(a, 'su_c') >= 2, why: a => `Only ${n(a, 'su_c')} of the 11 criteria were endorsed; 2 are required.` },
+      { id: 'B', label: 'Impairment or distress', test: a => notNo(a, 'su_imp'), why: () => 'No clinically significant impairment or distress was reported.' }
     ],
     severity: a => { const c = n(a, 'su_c'); return c >= 6 ? 'severe' : c >= 4 ? 'moderate' : c >= 2 ? 'mild' : null; },
-    near: a => n(a, 'su_c') === 1
+    near: a => n(a, 'su_c') >= 1
   },
 
   /* ------------------------------------------------------------ EATING -- */
@@ -856,14 +785,7 @@ const MODULES = [
     items: [
       { id: 'an_res', k: 'yn', q: 'Do you restrict what you eat to the point that your body weight is significantly low for your age, sex and health?' },
       { id: 'an_fea', k: 'yn', q: 'Do you have an intense fear of gaining weight, or persistently behave in ways that prevent gain, even at low weight?' },
-      { id: 'an_bod', k: 'yn', q: 'Is your self-worth heavily determined by weight or shape, or do you not recognise the seriousness of the low weight?' },
-      {
-        id: 'an_typ', k: 'pick', q: 'Over the last three months, which fits better?',
-        opts: [
-          { v: 'a', t: 'Mainly restricting — no regular bingeing or purging' },
-          { v: 'b', t: 'Regular bingeing or purging as well' }
-        ]
-      }
+      { id: 'an_bod', k: 'yn', q: 'Is your self-worth heavily determined by weight or shape, or do you not recognise the seriousness of the low weight?' }
     ],
     criteria: [
       { id: 'A', label: 'Restriction leading to significantly low weight', test: a => notNo(a, 'an_res'), why: () => 'Significantly low body weight resulting from restriction was not reported. Restriction and fear without low weight is atypical anorexia, coded under other specified feeding disorder, not anorexia nervosa.' },
@@ -876,7 +798,6 @@ const MODULES = [
   {
     id: 'bn', name: 'Bulimia Nervosa', chap: 'Feeding and Eating',
     items: [
-      { id: 'bn_bin', k: 'yn', q: 'Do you have episodes of eating a clearly large amount in a short period, with a sense of losing control?' },
       { id: 'bn_com', k: 'yn', q: 'Do you regularly compensate afterwards — vomiting, laxatives, fasting, or excessive exercise?' },
       {
         id: 'bn_fre', k: 'pick', q: 'How often have both happened?',
@@ -888,18 +809,17 @@ const MODULES = [
       { id: 'bn_sel', k: 'yn', q: 'Is your self-evaluation unduly influenced by your shape and weight?' }
     ],
     criteria: [
-      { id: 'A', label: 'Recurrent binge eating', test: a => notNo(a, 'bn_bin'), why: () => 'Recurrent binge episodes with loss of control were not described. Eating a lot without the loss-of-control sense is overeating, not a binge.' },
+      { id: 'A', label: 'Recurrent binge eating', test: a => notNo(a, 's_eat_b'), why: () => 'Recurrent binge episodes with loss of control were not described. Eating a lot without the loss-of-control sense is overeating, not a binge.' },
       { id: 'B', label: 'Recurrent compensatory behaviour', test: a => notNo(a, 'bn_com'), why: () => 'No recurrent compensatory behaviour was reported. Without it the branch moves to binge-eating disorder.' },
       { id: 'C', label: 'Weekly for three months', test: a => a.bn_fre === 'a', why: () => 'The once-a-week-for-three-months frequency threshold was not met.' },
       { id: 'D', label: 'Self-evaluation tied to shape and weight', test: a => notNo(a, 'bn_sel'), why: () => 'Self-evaluation was not unduly influenced by shape and weight.' }
     ],
-    near: a => notNo(a, 'bn_bin')
+    near: a => notNo(a, 's_eat_b')
   },
 
   {
     id: 'bed', name: 'Binge-Eating Disorder', chap: 'Feeding and Eating',
     items: [
-      { id: 'be_bin', k: 'yn', q: 'Do you have episodes of eating a clearly large amount in a short period, with a sense of losing control?' },
       {
         id: 'be_fea', k: 'multi',
         q: 'Which of these are true of those episodes?',
@@ -921,39 +841,31 @@ const MODULES = [
       }
     ],
     criteria: [
-      { id: 'A', label: 'Recurrent binge eating', test: a => notNo(a, 'be_bin'), why: () => 'Recurrent binge episodes with loss of control were not described.' },
+      { id: 'A', label: 'Recurrent binge eating', test: a => notNo(a, 's_eat_b'), why: () => 'Recurrent binge episodes with loss of control were not described.' },
       { id: 'B', label: 'Three or more associated features', test: a => n(a, 'be_fea') >= 3, why: a => `Only ${n(a, 'be_fea')} of the 5 associated features were present; 3 are required.` },
       { id: 'C', label: 'Marked distress about the bingeing', test: a => notNo(a, 'be_dis'), why: () => 'Marked distress about the binge eating was not reported.' },
       { id: 'D', label: 'Weekly for three months', test: a => a.be_fre === 'a', why: () => 'The once-a-week-for-three-months frequency threshold was not met.' }
     ],
-    near: a => notNo(a, 'be_bin')
+    near: a => notNo(a, 's_eat_b')
   },
 
   /* ------------------------------------------------------------- SLEEP -- */
   {
     id: 'insomnia', name: 'Insomnia Disorder', chap: 'Sleep-Wake',
     items: [
-      {
-        id: 'in_wha', k: 'multi', q: 'Which of these do you have?',
-        opts: [
-          { v: 'ons', t: 'Difficulty falling asleep' },
-          { v: 'mai', t: 'Difficulty staying asleep, with frequent waking' },
-          { v: 'ear', t: 'Waking too early and being unable to return to sleep' }
-        ]
-      },
       { id: 'in_opp', k: 'yn', q: 'Does this happen despite having adequate opportunity to sleep?', help: 'Insufficient sleep because of shift work, a newborn or a long commute is sleep deprivation, not insomnia disorder.' },
       { id: 'in_fre', k: 'yn', q: 'Does it occur at least three nights a week?' },
       { id: 'in_dur', k: 'yn', q: 'Has it lasted three months or more?' },
       { id: 'in_day', k: 'yn', q: 'Does it cause daytime consequences — fatigue, mood, concentration, work or study problems?' }
     ],
     criteria: [
-      { id: 'A', label: 'A sleep complaint', test: a => n(a, 'in_wha') >= 1, why: () => 'No difficulty with sleep onset, maintenance or early waking was reported.' },
+      { id: 'A', label: 'A sleep complaint', test: a => notNo(a, 's_ins'), why: () => 'No difficulty with sleep onset, maintenance or early waking was reported.' },
       { id: 'B', label: 'Adequate opportunity to sleep', test: a => notNo(a, 'in_opp'), why: () => 'There was not adequate opportunity to sleep. That makes this sleep deprivation rather than insomnia disorder, and the fix is circumstantial rather than clinical.' },
       { id: 'C', label: 'Three nights a week', test: a => notNo(a, 'in_fre'), why: () => 'The three-nights-a-week frequency was not met.' },
       { id: 'D', label: 'Three months or more', test: a => notNo(a, 'in_dur'), why: () => 'The three-month duration was not met. Shorter than that is short-term insomnia, which usually resolves without treatment.' },
       { id: 'E', label: 'Daytime consequences', test: a => notNo(a, 'in_day'), why: () => 'No daytime consequences were reported. Short sleep without daytime effects is not a disorder — some people simply need less.' }
     ],
-    near: a => n(a, 'in_wha') >= 1 && notNo(a, 'in_day')
+    near: a => notNo(a, 's_ins') && notNo(a, 'in_day')
   },
 
   /* --------------------------------------------- NEURODEVELOPMENTAL ----- */
@@ -1015,33 +927,16 @@ const MODULES = [
     blurb: 'This branch is deliberately not finished by a self-report tool.',
     referOnly: true,
     items: [
-      {
-        id: 'ps_sx', k: 'multi', q: 'Which of these have you experienced?',
-        opts: [
-          { v: 'hal', t: 'Hearing or seeing things others did not' },
-          { v: 'del', t: 'Beliefs others insisted were untrue — being followed, special messages, special powers' },
-          { v: 'tho', t: 'Thoughts being inserted, removed or broadcast' },
-          { v: 'spe', t: 'Speech others found hard to follow or disorganised' },
-          { v: 'cat', t: 'Long periods barely moving, or very unusual movement' }
-        ]
-      },
-      {
-        id: 'ps_dur', k: 'pick', q: 'Over what period?',
-        opts: [
-          { v: 'a', t: 'Less than a month' }, { v: 'b', t: 'One to six months' },
-          { v: 'c', t: 'Six months or more' }
-        ]
-      },
       { id: 'ps_moo', k: 'yn', q: 'Did these happen only during a period of severe depression or unusually high mood?' },
       { id: 'ps_sub', k: 'yn', q: 'Did they happen only while using a substance, or withdrawing from one?' },
       { id: 'ps_imp', k: 'yn', q: 'Did they cause significant distress or impairment?' }
     ],
     criteria: [
-      { id: 'A', label: 'One or more psychotic-spectrum features', test: a => n(a, 'ps_sx') >= 1, why: () => 'No psychotic-spectrum features were reported.' },
+      { id: 'A', label: 'One or more psychotic-spectrum features', test: a => notNo(a, 's_psy'), why: () => 'No psychotic-spectrum features were reported.' },
       { id: 'B', label: 'Not confined to substance use', test: a => a.ps_sub !== 'yes', why: () => 'The experiences occurred only during substance use or withdrawal, which makes this a substance-induced psychotic disorder rather than a primary one.' },
       { id: 'C', label: 'Distress or impairment', test: a => notNo(a, 'ps_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],
-    near: a => n(a, 'ps_sx') >= 1
+    near: a => notNo(a, 's_psy')
   },
 
   /* -------------------------------------------------------- PERSONALITY - */
@@ -1068,13 +963,12 @@ const MODULES = [
           { v: 'det', t: 'Little interest in close relationships of any kind' }
         ]
       },
-      { id: 'pp_ons', k: 'yn', q: 'Has this been the pattern since your late teens or early twenties, rather than a recent change?' },
       { id: 'pp_per', k: 'yn', q: 'Is it stable across most situations and relationships, rather than tied to one person or period?' },
       { id: 'pp_imp', k: 'yn', q: 'Does it cause significant distress or impairment?' }
     ],
     criteria: [
       { id: 'A', label: 'Four or more enduring traits', test: a => n(a, 'pp_sx') >= 4, why: a => `${n(a, 'pp_sx')} traits were endorsed; the screen triggers at 4.` },
-      { id: 'B', label: 'Onset by early adulthood', test: a => notNo(a, 'pp_ons'), why: () => 'The pattern is a recent change rather than lifelong. Personality disorder requires an enduring pattern traceable to adolescence or early adulthood — a recent change points to a mood, anxiety, substance or medical cause.' },
+      { id: 'B', label: 'Onset by early adulthood', test: a => notNo(a, 's_pp'), why: () => 'The pattern is a recent change rather than lifelong. Personality disorder requires an enduring pattern traceable to adolescence or early adulthood — a recent change points to a mood, anxiety, substance or medical cause.' },
       { id: 'C', label: 'Pervasive across situations', test: a => notNo(a, 'pp_per'), why: () => 'The pattern is tied to specific situations or relationships rather than being pervasive.' },
       { id: 'D', label: 'Distress or impairment', test: a => notNo(a, 'pp_imp'), why: () => 'No significant distress or impairment was reported.' }
     ],

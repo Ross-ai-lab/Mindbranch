@@ -19,7 +19,7 @@ for name in FILES:
 for name in FILES:
     if name.endswith('.js'):
         subprocess.run(['node','--check',name],cwd=ROOT,check=True)
-subprocess.run(['node','--test','tests/bodybranch.test.cjs'],cwd=ROOT,check=True)
+subprocess.run(['node','--test','tests/'],cwd=ROOT,check=True)
 stage = Path(tempfile.mkdtemp(prefix='deploy-stage-',dir=PREVIEW)).resolve()
 assert stage.is_relative_to(PREVIEW)
 for name in FILES:

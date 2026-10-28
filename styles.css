@@ -1,16 +1,6 @@
 /* ============================================================================
-   Mindbranch — one committed GREEN palette, no theme toggle.
-   No external fonts, no external anything: the page works offline.
-
-   Background layers, in z-order:
-     .bg      base wash + five drifting colour blobs (multiply, not screen —
-              on a light base screen-blended colour is invisible)
-     .canopy  a tiled branching texture that sways, with sap climbing the
-              trunks and junction nodes breathing inside the <pattern>
-     .vine    two climbing vines at the page edges, each with a light
-              travelling up it and leaves that open in sequence
-     .motes   slow rising pollen
-     .leaves  falling leaves, randomised size, spin, drift and duration
+   Mindbranch and Bodybranch share this green palette and the living garden
+   background described in index.html. No external fonts or assets.
    ========================================================================== */
 
 :root {
@@ -48,10 +38,7 @@ body {
 }
 
 /* ------------------------------------------------------- living background */
-/* Eight layers. Every rule animates transform or opacity only, so none of it
-   triggers layout; `will-change` is set on the handful that move continuously
-   and deliberately NOT on the rest, since a compositor layer per element costs
-   more than it saves. */
+/* Every rule animates transform or opacity only, so none of it triggers layout. */
 
 .bg {
   position: fixed; inset: 0; z-index: -6; overflow: hidden;
@@ -187,13 +174,12 @@ header.top h1 { font: 600 25px/1.2 var(--serif); margin: 0; letter-spacing: .2px
 header.top h1 span { color: var(--cool); }
 header.top .sub { color: var(--dim); font-size: 13.5px; }
 header.top .spacer { flex: 1 1 auto; }
+@media (max-width: 700px) {
+  header.top { padding: 16px 0 12px; margin-bottom: 18px; gap: 10px; }
+  header.top .sub { display: none; }
+}
 .music-toggle { min-width: 96px; }
 .music-toggle.on { background: var(--cool2); color: var(--cool); border-color: var(--cool); }
-.site-foot {
-  color: var(--dim); font-size: 12px; text-align: center;
-  margin-top: 38px; padding-top: 16px; border-top: 1px solid var(--line);
-}
-.site-foot a { color: var(--cool); }
 
 .btn {
   font: 500 14px/1 var(--sans); color: var(--ink2);
@@ -212,18 +198,7 @@ header.top .spacer { flex: 1 1 auto; }
 .landing { max-width: 760px; margin: 4vh auto 0; }
 .landing h2 { font: 600 32px/1.22 var(--serif); margin: 0 0 6px; }
 .landing .lede { color: var(--ink2); font-size: 17px; margin: 0 0 26px; }
-.landing p { color: var(--ink2); }
-.landing ol { color: var(--ink2); padding-left: 20px; }
-.landing ol li { margin-bottom: 9px; }
-.landing ol b { color: var(--ink); font-weight: 650; }
-
-.warn {
-  border: 1px solid #e3bcb4; background: var(--clay2);
-  border-left: 3px solid var(--clay);
-  padding: 15px 18px; border-radius: 8px; margin: 24px 0;
-}
-.warn h4 { margin: 0 0 6px; font: 700 12px/1.3 var(--sans); color: var(--clay); letter-spacing: .7px; text-transform: uppercase; }
-.warn p { margin: 0; font-size: 14.5px; color: #6d3931; }
+.landing .msg { color: var(--clay); font-size: 14px; }
 
 .landing .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
@@ -305,24 +280,6 @@ header.top .spacer { flex: 1 1 auto; }
 .hero { border-radius: 12px; border: 1px solid var(--line); margin-bottom: 26px; box-shadow: var(--shadow); }
 .hero img { display: block; max-width: 100%; height: auto; margin: 0 auto; }
 
-/* Attribution. Collapsed by default, but present on the page — CC BY and
-   CC BY-SA both require it, so this block is load-bearing, not decoration. */
-.credits { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 16px; }
-.credits summary { cursor: pointer; font: 600 13px/1.4 var(--sans); color: var(--ink2); }
-.credits summary:hover { color: var(--cool); }
-.credits p { font-size: 13px; margin: 12px 0; }
-/* 152 rows, so three columns and a scroll cap rather than a page of credits. */
-.credits ul {
-  list-style: none; padding: 0 4px 0 0; margin: 0; columns: 3; column-gap: 26px;
-  max-height: 420px; overflow-y: auto;
-}
-@media (max-width: 1000px) { .credits ul { columns: 2; } }
-@media (max-width: 700px) { .credits ul { columns: 1; } }
-.credits li { font-size: 12px; color: var(--dim); margin-bottom: 8px; break-inside: avoid; line-height: 1.45; }
-.credits li b { color: var(--ink2); font-weight: 650; }
-.credits li a { color: var(--cool); }
-.credits li span { color: var(--dim); }
-
 .qmeta { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .chip {
   font: 700 11px/1 var(--sans); letter-spacing: 1.1px; text-transform: uppercase;
@@ -381,7 +338,6 @@ header.top .spacer { flex: 1 1 auto; }
 .dx.met .tag  { background: var(--gold); color: #fff; }
 .dx.near .tag { background: #f1e6d0; color: var(--amber); border: 1px solid #d6c3a2; }
 .dx.out .tag  { background: transparent; color: var(--dim); border: 1px solid var(--line2); }
-.dx .chapname { color: var(--dim); font-size: 12.5px; margin-left: auto; }
 .dx .blurb { color: var(--ink2); font-size: 14px; margin: 9px 0 0; }
 .dx .why { color: var(--ink2); font-size: 14.2px; margin: 10px 0 0; line-height: 1.58; border-left: 2px solid var(--line2); padding-left: 13px; }
 .dx.out .why { border-left-color: #d9a79f; }
@@ -412,7 +368,8 @@ header.top .spacer { flex: 1 1 auto; }
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 46%); gap: 18px;
   align-items: baseline; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;
 }
-.path .row:first-of-type { border-top: none; }
+.path > summary { cursor: pointer; font: 700 12px/1 var(--sans); letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); }
+.path[open] > summary { margin-bottom: 14px; }
 .path .row .q { color: var(--ink2); min-width: 0; }
 .path .row .q em { color: var(--dim); font-style: normal; font-size: 12.5px; display: block; }
 .path .row .a { color: var(--cool); font-weight: 650; text-align: right; min-width: 0; }
@@ -451,4 +408,3 @@ header.top .spacer { flex: 1 1 auto; }
 .diff .none { color: var(--ink2); font-size: 14px; margin: 0; }
 
 .resactions { display: flex; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
-.foot { color: var(--dim); font-size: 12.5px; margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); }
