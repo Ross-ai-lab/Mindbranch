@@ -7,18 +7,13 @@
 
 const MOD = Object.fromEntries(MODULES.map(m => [m.id, m]));
 
-/* Which modules did the screener open? A "not sure" opens the module too —
-   over-opening costs questions, under-opening costs a diagnosis. */
-function openedModules(ctx) {
+/* Which modules did the screen open? A "not sure" opens the module too —
+   over-opening costs questions, under-opening costs a diagnosis. Adjustment
+   disorder, the residual category, is opened by the framing stressor item. */
+function openedModules(A) {
   const set = new Set();
-  SCREEN.forEach(s => {
-    if (ctx[s.id] === 'yes' || ctx[s.id] === 'unsure') s.opens.forEach(m => set.add(m));
-  });
-  // Adjustment disorder has no screener gate of its own — it is the residual
-  // category, so the stressor question in the framing block is what opens it.
-  if (ctx.c_stress === 'yes' || ctx.c_stress === 'unsure') set.add('adjust');
-  MODULES.forEach(m => {
-    if (m.needs && m.needs.some(x => set.has(x))) set.add(m.id);
+  [...CONTEXT, ...SCREEN].forEach(s => {
+    if (s.opens && (A[s.id] === 'yes' || A[s.id] === 'unsure')) s.opens.forEach(m => set.add(m));
   });
   return MODULES.filter(m => set.has(m.id)).map(m => m.id);
 }
@@ -43,7 +38,9 @@ function pruneGroups(open) {
 }
 
 /* Every value an unanswered item could still take, most-favourable first so
-   a live group exits on the first combination.
+   a live group exits on the first combination. Multi items try only "all
+   ticked", which is exact because every multi criterion and near-threshold
+   test is a count that only rises as options are ticked.
 
    yn MUST enumerate all three. "yes" is not universally the helpful answer:
    several criteria are satisfied by a NO (persistent depressive disorder needs
@@ -52,10 +49,9 @@ function pruneGroups(open) {
    questions that mattered — the exact failure this whole mechanism must not
    have. */
 function candidates(it) {
-  if (it.k === 'multi') return [(it.opts || []).map(o => o.v)];   // ticking all is always >= ticking some
+  if (it.k === 'multi') return [(it.opts || []).map(o => o.v)];
   if (it.k === 'yn') return ['yes', 'unsure', 'no'];
-  if (it.k === 'pick') return (it.opts || []).map(o => o.v);
-  return [undefined];
+  return it.opts.map(o => o.v);
 }
 
 /* ------------------------------------------------------------------------
@@ -158,10 +154,7 @@ function baseResults(A) {
 function buildQueue(A) {
   const q = [];
   CONTEXT.forEach(c => q.push({ phase: 'context', sect: 'Framing', item: c }));
-  SCREEN.forEach(s => q.push({
-    phase: 'screen', sect: 'Screening',
-    item: { id: s.id, k: 'yn', q: s.q, help: null }
-  }));
+  SCREEN.forEach(s => q.push({ phase: 'screen', sect: 'Screening', item: s }));
   const { groups, dead: deadMap } = analysis(A);
   const emitted = new Set();
   groups.forEach(g => {
@@ -181,7 +174,7 @@ function buildQueue(A) {
 function evalModule(m, A, R) {
   const rows = (m.criteria || []).map(c => {
     let pass = false;
-    try { pass = !!c.test(A, R, A); } catch (e) { pass = false; }
+    try { pass = !!c.test(A, R); } catch (e) {}
     return { id: c.id, label: c.label, pass, why: pass ? null : safeWhy(c, A) };
   });
   const failed = rows.filter(r => !r.pass);
@@ -206,9 +199,6 @@ function safeNear(m, A) { try { return !!m.near(A); } catch (e) { return false; 
 
 /* The full run. */
 function evaluate(A) {
-  const ctx = {};
-  CONTEXT.forEach(c => ctx[c.id] = A[c.id]);
-
   const open = openedModules(A);
   const R = baseResults(A);
 
@@ -217,14 +207,16 @@ function evaluate(A) {
      it would silently report a missing answer as a negative one. That happens
      after a Skip, and after a replay revives a module that had been pruned. */
   const { groups, dead: deadMap } = analysis(A);
-  const pruned = [], unresolved = [];
+  let skippedCount = 0, pendingCount = 0;
   groups.forEach(g => {
+    const owed = g.items.filter(i => A[i.id] === undefined).length;
+    if (!owed) return;
     const dead = deadMap.get(g.key);
-    const owed = g.items.filter(i => A[i.id] === undefined);
-    if (!owed.length) return;
+    // Counted once per group: Bipolar I and II share one set of questions.
+    if (dead) skippedCount += owed; else pendingCount += owed;
     g.mods.forEach(m => {
-      if (dead) { R[m.id].pruned = true; R[m.id].skipped = owed.length; pruned.push(R[m.id]); }
-      else { R[m.id].status = 'unresolved'; R[m.id].pending = owed.length; unresolved.push(R[m.id]); }
+      if (dead) { R[m.id].pruned = true; R[m.id].skipped = owed; }
+      else { R[m.id].status = 'unresolved'; R[m.id].pending = owed; }
     });
   });
 
@@ -239,19 +231,19 @@ function evaluate(A) {
 
   RULES.forEach(rule => {
     let msg;
-    try { msg = rule.fire(R, A, ctx, out); } catch (e) { msg = null; }
+    try { msg = rule.fire(R, A, A, out); } catch (e) { msg = null; }
     if (msg) ledger.push({ id: rule.id, title: rule.title, msg });
   });
 
   const all = open.map(id => R[id]);
   return {
-    results: R, opened: open, ledger, ctx,
+    results: R, opened: open, ledger,
     met: all.filter(r => r.status === 'met'),
     near: all.filter(r => r.status === 'near'),
     ruled: all.filter(r => r.status === 'out' && !r.pruned),
     pruned: all.filter(r => r.pruned),
     unresolved: all.filter(r => r.status === 'unresolved'),
-    skippedCount: pruned.reduce((n, r) => n + r.skipped, 0)
+    skippedCount, pendingCount
   };
 }
 

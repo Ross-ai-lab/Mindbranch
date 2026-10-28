@@ -32,7 +32,7 @@ test('not sure and missing are never treated as negative answers',()=>{
   const unknown=E.evaluate({...a,urgent_now:['unsure']});assert.equal(unknown.safetyUnknown,true);assert.ok(unknown.candidates.every(c=>c.band!=='stronger'));
 });
 test('every emergency branch interrupts the ordinary differential',()=>{
-  for(const id of Object.keys(E.emergencyMap)){
+  for(const id of Object.keys(E.emergencies)){
     const r=E.evaluate(fixture(['energy'],{urgent_now:[id],fatigue_daily:'yes'}));assert.ok(r.emergencies.length,id);assert.equal(r.candidates.length,0,id);
   }
 });

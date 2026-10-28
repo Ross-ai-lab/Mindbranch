@@ -14,6 +14,7 @@
   const any = (...rules) => ({ any: rules });
   const all = (...rules) => ({ all: rules });
   const opt = (v, t) => ({ v, t });
+  const emergency = (v, t, name, why) => ({ v, t, name, why });
   const source = (title, url) => ({ title, url });
   const sources = {
     fatigue: source('NHS · tiredness and fatigue', 'https://www.nhs.uk/symptoms/tiredness-and-fatigue/'),
@@ -124,17 +125,17 @@
   ];
   const context = [
     multi('urgent_now', 'Is any of this happening right now?', [
-      opt('chest', 'Persistent chest pressure, especially with sweating, breathlessness or pain into an arm/jaw'),
-      opt('breath', 'Severe trouble breathing, blue/grey lips, or inability to speak normally'),
-      opt('stroke', 'Sudden one-sided weakness, facial droop, speech loss or new loss of vision'),
-      opt('head', 'A sudden headache reaching maximum intensity within a minute'),
-      opt('allergy', 'Swollen tongue/throat or breathing difficulty after an exposure'),
-      opt('bleed', 'Vomiting blood, black tarry stools with faintness, or uncontrolled bleeding'),
-      opt('infection', 'Fever with a stiff neck, confusion, collapse or a rapidly spreading purple rash'),
-      opt('abdomen', 'Sudden severe abdominal/pelvic pain, a rigid abdomen, or testicular pain'),
-      opt('pregnancy', 'Possible pregnancy with severe pelvic pain, faintness or heavy bleeding'),
-      opt('metabolic', 'Extreme thirst/urination with vomiting, deep rapid breathing or unusual drowsiness'),
-      opt('spine', 'New bladder/bowel control problems with numbness around the groin or new leg weakness')
+      emergency('chest', 'Persistent chest pressure, especially with sweating, breathlessness or pain into an arm/jaw', 'Acute coronary syndrome / heart attack', 'Persistent chest symptoms with associated warning features need emergency assessment.'),
+      emergency('breath', 'Severe trouble breathing, blue/grey lips, or inability to speak normally', 'Severe respiratory illness / pulmonary embolism or other acute lung problem', 'Severe breathing difficulty is an emergency regardless of the cause.'),
+      emergency('stroke', 'Sudden one-sided weakness, facial droop, speech loss or new loss of vision', 'Stroke / transient ischemic attack', 'Sudden focal neurological loss needs immediate assessment even if it improves.'),
+      emergency('head', 'A sudden headache reaching maximum intensity within a minute', 'Subarachnoid hemorrhage or another thunderclap-headache cause', 'An immediately maximal headache needs emergency investigation.'),
+      emergency('allergy', 'Swollen tongue/throat or breathing difficulty after an exposure', 'Anaphylaxis', 'Airway or breathing symptoms after an exposure need emergency treatment.'),
+      emergency('bleed', 'Vomiting blood, black tarry stools with faintness, or uncontrolled bleeding', 'Major gastrointestinal or other bleeding', 'Significant bleeding with faintness can indicate circulatory compromise.'),
+      emergency('infection', 'Fever with a stiff neck, confusion, collapse or a rapidly spreading purple rash', 'Meningitis / sepsis or another serious infection', 'Fever with confusion, neck stiffness, collapse or a purple rash needs emergency assessment.'),
+      emergency('abdomen', 'Sudden severe abdominal/pelvic pain, a rigid abdomen, or testicular pain', 'Acute abdominal or testicular emergency', 'Severe sudden abdominal/pelvic or testicular pain requires emergency assessment.'),
+      emergency('pregnancy', 'Possible pregnancy with severe pelvic pain, faintness or heavy bleeding', 'Ectopic pregnancy / pregnancy-related bleeding', 'Pregnancy-associated severe pain, faintness or heavy bleeding is an emergency.'),
+      emergency('metabolic', 'Extreme thirst/urination with vomiting, deep rapid breathing or unusual drowsiness', 'Diabetic ketoacidosis or another metabolic emergency', 'Thirst/urination with vomiting, deep rapid breathing or drowsiness needs urgent emergency testing.'),
+      emergency('spine', 'New bladder/bowel control problems with numbness around the groin or new leg weakness', 'Cauda equina syndrome / spinal compression', 'New bladder or bowel dysfunction with saddle numbness or leg weakness needs emergency assessment.')
     ], 'A positive answer stops the routine questionnaire.'),
     pick('age', 'Which age group are you in?', [opt('18_39', '18–39'), opt('40_64', '40–64'), opt('65_plus', '65 or older'), opt('under18', 'Under 18')]),
     multi('concerns', 'Which physical symptoms do you want to narrow down?', domains, 'Choose the areas for this problem, not every symptom you have ever had.'),

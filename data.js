@@ -33,27 +33,27 @@ const YN = [
 
 const CONTEXT = [
   {
-    id: 'c_sub', k: 'yn', sect: 'Framing', flag: 'substance',
+    id: 'c_sub', k: 'yn',
     q: 'Over the period you will be describing, were you drinking heavily, using drugs, or coming off either?',
     help: 'Step 2 of the differential. Substance use and withdrawal can produce almost every symptom in this tool. A yes does not stop anything, but it flags every mood, anxiety and psychosis result as needing a substance-induced disorder ruled out first.'
   },
   {
-    id: 'c_med', k: 'yn', sect: 'Framing', flag: 'medical',
+    id: 'c_med', k: 'yn',
     q: 'Do you have, or might you have, a physical condition that could be causing this?',
     help: 'Step 3. Thyroid disease, anaemia, sleep apnoea, head injury, chronic pain, neurological conditions, long infections. This is the exclusion a self-report tool is worst at, which is exactly why it is asked out loud instead of assumed away.'
   },
   {
-    id: 'c_rx', k: 'yn', sect: 'Framing', flag: 'medication',
+    id: 'c_rx', k: 'yn',
     q: 'Did you start, stop, or change a medication around the time this began?',
     help: 'Steroids, hormonal contraceptives, isotretinoin, beta blockers, stimulants, antidepressants and withdrawal from any of them all belong here.'
   },
   {
-    id: 'c_stress', k: 'yn', sect: 'Framing', flag: 'stressor',
+    id: 'c_stress', k: 'yn', opens: ['adjust'],
     q: 'Did an identifiable stressful event happen in the three months before this started?',
     help: 'A move, a loss, a breakup, a job change, an illness. This decides whether adjustment disorder is even on the table at the end.'
   },
   {
-    id: 'c_norm', k: 'pick', sect: 'Framing',
+    id: 'c_norm', k: 'pick',
     q: 'Honestly — is what you are describing worse than what most people go through in the same situation?',
     help: 'Step 5: the boundary with normality. Distress that fits its cause and passes is not a disorder, and a tool that never asks this diagnoses everybody.',
     opts: [
@@ -68,31 +68,31 @@ const CONTEXT = [
 /* MINI-style gates. Answering yes or "not sure" queues the listed modules. */
 
 const SCREEN = [
-  { id: 's_dep', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when you felt down, empty or hopeless nearly every day?' },
-  { id: 's_anh', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when almost nothing gave you pleasure or interest any more?' },
-  { id: 's_pdd', opens: ['pdd'], q: 'Have you felt low more days than not for two years or longer?' },
-  { id: 's_man', opens: ['manic', 'hypo'], q: 'Has there been a period of days when you felt unusually high, wired, or unusually irritable, with far more energy than normal?' },
-  { id: 's_cyc', opens: ['cyclo'], q: 'Over two years or more, have your moods swung up and down repeatedly without ever reaching a full high or a full depression?' },
-  { id: 's_pan', opens: ['panic'], q: 'Have you had sudden rushes of intense fear or physical alarm that peaked within a few minutes?' },
-  { id: 's_ago', opens: ['agora'], q: 'Do you avoid transport, crowds, queues, shops or being far from home because escape or help might be hard?' },
-  { id: 's_soc', opens: ['sad'], q: 'Do social or performance situations frighten you because you might be judged, embarrassed or seen to be anxious?' },
-  { id: 's_gad', opens: ['gad'], q: 'Do you worry excessively about several different things, more days than not, and find it hard to stop?' },
-  { id: 's_pho', opens: ['phobia'], q: 'Is there a specific thing, animal or situation that reliably frightens you far more than it should?' },
-  { id: 's_ocd', opens: ['ocd'], q: 'Do unwanted thoughts keep forcing their way in, or do you feel driven to repeat actions like checking, washing, counting or ordering?' },
-  { id: 's_bdd', opens: ['bdd'], q: 'Are you preoccupied with something about your appearance that other people say is slight or cannot see?' },
-  { id: 's_hoard', opens: ['hoard'], q: 'Do you find it very hard to part with possessions, to the point that rooms can no longer be used as intended?' },
-  { id: 's_bfrb', opens: ['bfrb'], q: 'Do you repeatedly pull out your hair or pick at your skin, enough to cause damage?' },
-  { id: 's_ptsd', opens: ['ptsd'], q: 'Have you experienced or witnessed something involving death, serious injury or sexual violence that still intrudes on you?' },
-  { id: 's_ssd', opens: ['ssd', 'iad'], q: 'Do physical symptoms, or the fear of being seriously ill, take up a large amount of your attention?' },
-  { id: 's_dpdr', opens: ['dpdr'], q: 'Do you have episodes of feeling detached from yourself, or of the world seeming unreal or dreamlike?' },
-  { id: 's_aud', opens: ['aud'], q: 'Has your drinking caused problems, or been harder to control than you wanted?' },
-  { id: 's_sud', opens: ['sud'], q: 'Has your use of any other substance caused problems, or been harder to control than you wanted?' },
-  { id: 's_eat_r', opens: ['an'], q: 'Do you restrict what you eat, and is your weight low or falling, with a strong fear of gaining?' },
-  { id: 's_eat_b', opens: ['bn', 'bed'], q: 'Do you have episodes of eating an unusually large amount with a sense of being out of control?' },
-  { id: 's_ins', opens: ['insomnia'], q: 'Do you regularly struggle to fall asleep, stay asleep, or wake far too early?' },
-  { id: 's_adhd', opens: ['adhd'], q: 'Have inattention, restlessness or impulsivity been a lifelong problem for you across most areas of life?' },
-  { id: 's_psy', opens: ['psych'], q: 'Have you heard or seen things others did not, or held beliefs that others insisted were not true?' },
-  { id: 's_pp', opens: ['pp'], q: 'Since your late teens, have the same problems with relationships, identity or emotional control repeated across most of your life?' }
+  { id: 's_dep', k: 'yn', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when you felt down, empty or hopeless nearly every day?' },
+  { id: 's_anh', k: 'yn', opens: ['mde'], q: 'Has there been a stretch of two weeks or more when almost nothing gave you pleasure or interest any more?' },
+  { id: 's_pdd', k: 'yn', opens: ['pdd'], q: 'Have you felt low more days than not for two years or longer?' },
+  { id: 's_man', k: 'yn', opens: ['manic', 'hypo'], q: 'Has there been a period of days when you felt unusually high, wired, or unusually irritable, with far more energy than normal?' },
+  { id: 's_cyc', k: 'yn', opens: ['cyclo'], q: 'Over two years or more, have your moods swung up and down repeatedly without ever reaching a full high or a full depression?' },
+  { id: 's_pan', k: 'yn', opens: ['panic'], q: 'Have you had sudden rushes of intense fear or physical alarm that peaked within a few minutes?' },
+  { id: 's_ago', k: 'yn', opens: ['agora'], q: 'Do you avoid transport, crowds, queues, shops or being far from home because escape or help might be hard?' },
+  { id: 's_soc', k: 'yn', opens: ['sad'], q: 'Do social or performance situations frighten you because you might be judged, embarrassed or seen to be anxious?' },
+  { id: 's_gad', k: 'yn', opens: ['gad'], q: 'Do you worry excessively about several different things, more days than not, and find it hard to stop?' },
+  { id: 's_pho', k: 'yn', opens: ['phobia'], q: 'Is there a specific thing, animal or situation that reliably frightens you far more than it should?' },
+  { id: 's_ocd', k: 'yn', opens: ['ocd'], q: 'Do unwanted thoughts keep forcing their way in, or do you feel driven to repeat actions like checking, washing, counting or ordering?' },
+  { id: 's_bdd', k: 'yn', opens: ['bdd'], q: 'Are you preoccupied with something about your appearance that other people say is slight or cannot see?' },
+  { id: 's_hoard', k: 'yn', opens: ['hoard'], q: 'Do you find it very hard to part with possessions, to the point that rooms can no longer be used as intended?' },
+  { id: 's_bfrb', k: 'yn', opens: ['bfrb'], q: 'Do you repeatedly pull out your hair or pick at your skin, enough to cause damage?' },
+  { id: 's_ptsd', k: 'yn', opens: ['ptsd'], q: 'Have you experienced or witnessed something involving death, serious injury or sexual violence that still intrudes on you?' },
+  { id: 's_ssd', k: 'yn', opens: ['ssd', 'iad'], q: 'Do physical symptoms, or the fear of being seriously ill, take up a large amount of your attention?' },
+  { id: 's_dpdr', k: 'yn', opens: ['dpdr'], q: 'Do you have episodes of feeling detached from yourself, or of the world seeming unreal or dreamlike?' },
+  { id: 's_aud', k: 'yn', opens: ['aud'], q: 'Has your drinking caused problems, or been harder to control than you wanted?' },
+  { id: 's_sud', k: 'yn', opens: ['sud'], q: 'Has your use of any other substance caused problems, or been harder to control than you wanted?' },
+  { id: 's_eat_r', k: 'yn', opens: ['an'], q: 'Do you restrict what you eat, and is your weight low or falling, with a strong fear of gaining?' },
+  { id: 's_eat_b', k: 'yn', opens: ['bn', 'bed'], q: 'Do you have episodes of eating an unusually large amount with a sense of being out of control?' },
+  { id: 's_ins', k: 'yn', opens: ['insomnia'], q: 'Do you regularly struggle to fall asleep, stay asleep, or wake far too early?' },
+  { id: 's_adhd', k: 'yn', opens: ['adhd'], q: 'Have inattention, restlessness or impulsivity been a lifelong problem for you across most areas of life?' },
+  { id: 's_psy', k: 'yn', opens: ['psych'], q: 'Have you heard or seen things others did not, or held beliefs that others insisted were not true?' },
+  { id: 's_pp', k: 'yn', opens: ['pp'], q: 'Since your late teens, have the same problems with relationships, identity or emotional control repeated across most of your life?' }
 ];
 
 /* ================================================================ MODULES */
